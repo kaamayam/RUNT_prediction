@@ -1,0 +1,161 @@
+---
+title: "Reporte Técnico RUNT"
+
+author:
+- "**Karen Andrea Amaya**"
+- "**Sebastián Restrepo Betancur**"
+- "**María Del Pilar Mira Londoño**"
+- "**María Isabel Plata**"
+date: "Enero de 2022"
+output: rmdformats::robobook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+```
+
+```{r warning=F, message=F, results='hide'}
+library(tidyverse)
+library(kableExtra)
+require(gridExtra)
+library(gamlss)
+```
+
+# Base de datos
+
+```{r}
+datos<-readRDS("BaseFinal.rds")
+datos$Unidades<-as.integer(datos$Unidades)
+datos%>%kbl() %>%  kable_styling(font_size = 12) %>%
+  kableExtra::scroll_box(width = "100%", height = "200px")
+```
+## Festivos
+
+
+```{r}
+holid<-readRDS("national_holidays.rds")
+unique(holid$name)%>%kbl() %>%  kable_styling(font_size = 12) %>%
+  kableExtra::scroll_box(width = "30%", height = "200px")
+```
+## Fechas especiales
+
+```{r}
+special<-readRDS("special_dates.rds")
+unique(special$name)%>%kbl() %>%  kable_styling(font_size = 12) %>%
+  kableExtra::scroll_box(width = "30%", height = "200px")
+```
+
+```{r out.width="60%"}
+ggplot(datos, aes(x=Fecha, y=Unidades)) + 
+  geom_point(col='black', fill='blue', shape=21, alpha=0.5)+
+  ggtitle("Gráfico de dispersión")
+```
+
+```{r}
+train<-filter(datos, year<= 2016)
+test <-filter(datos, year > 2016 )
+```
+
+
+# Modelo Lineal
+
+```{r}
+mod0 <- lm(Unidades ~. , data = train)
+```
+
+## Datos atípicos
+
+```{r out.width="60%"}
+P1 <- ggplot(train, aes(y=Unidades))+
+  geom_boxplot(fill='#FFCCC1',alpha=0.7)+
+  labs(title = 'Gráfico de cajas para la variable Unidad',
+       x = 'Unidades', y='Número de registros diarios RUNT',
+       color=NULL)
+
+cooksd <- cooks.distance(mod0)
+P2<- ggplot(train, aes(x=Unidades, y=cooksd)) + 
+  geom_point(col='black', fill='blue', shape=21, alpha=0.5)+ geom_hline(yintercept = 4*mean(cooksd, na.rm=T), color = "red")+ ggtitle("Distancias de Cook (Modelo Lineal")
+
+grid.arrange(P1, P2, ncol=2)
+```
+
+```{r}
+influential <- na.omit(as.numeric(names(cooksd)[(cooksd > (4/nrow(train)))]))
+train2 <- datos[-influential, ]
+```
+
+# Modelos Sin Outliers
+
+```{r}
+mod1 <- lm(Unidades ~. , data = train2)
+```
+
+## Modelo Raiz
+
+```{r}
+mod2 <- lm(sqrt(Unidades) ~. , data = train2)
+```
+
+# Residuales
+```{r}
+par(mfrow=c(2,2))
+plot(mod0)
+```
+
+
+# Comparacion de los modelos
+
+
+$$
+R_{p s e u d o}^{2}=1-\frac{\sum_{i=1}^{n}\left(y_{i}-\hat{y}_{i}\right)^{2}}{\sum_{i=1}^{n}\left(y_{i}-\bar{y}\right)^{2}}
+$$
+$$
+\text { MSE }=\frac{1}{n} \sum\left(y_{n}-\overline{\mathrm{y}}\right)^{2}
+$$
+$$
+A I C=2 k-2 \ln (L)
+$$
+
+
+## Medidas de entrenamiento
+
+```{r}
+metricas<- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
+                      "MSE"=c(mean(mod0$residuals^2),
+                              mean(mod1$residuals^2),
+                              mean((train2$Unidades - fitted(mod2)^2)^2)),
+                      "R pseudo2"= c(summary(mod0)$r.squared,
+                              summary(mod1)$r.squared,
+                              summary(mod2)$r.squared),
+                      "AIC"=c(AIC(mod0),
+                              AIC(mod1),
+                              AIC(mod2)))
+metricas %>% kbl() %>%  kable_styling(font_size = 12)
+```
+## Medidas de Evaluación
+
+```{reval=F}
+pred0<- predict(mod0, newdata = test[,-2])
+pred1<- predict(mod1, newdata = test[,-2])
+pred2<- predict(mod2,newdata = test[,-2])
+
+
+mean((test$Unidades - pred0)^2)
+mean((test$Unidades - pred1)^2)
+mean((test$Unidades - (pred2^2))^2)
+```
+
+```{r}
+db2018<-readRDS("db_2018.rds")
+```
+
+
+
+# Predichos vs. observados
+
+```{r, message=F, warning=F}
+plot(train2$Unidades,((mod2$fitted.values)^2))
+```
+
+
+
