@@ -27,7 +27,7 @@ library(gamlss)
 datos<-readRDS("BaseFinal.rds")
 datos$Unidades<-as.integer(datos$Unidades)
 datos%>%kbl() %>%  kable_styling(font_size = 12) %>%
-  kableExtra::scroll_box(width = "100%", height = "200px")
+  kableExtra::scroll_box(width = "100%", height = "400px")
 ```
 ## Festivos
 
@@ -132,21 +132,43 @@ metricas<- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
                               AIC(mod2)))
 metricas %>% kbl() %>%  kable_styling(font_size = 12)
 ```
+
 ## Medidas de Evaluación
 
-```{reval=F}
+```{r}
 pred0<- predict(mod0, newdata = test[,-2])
 pred1<- predict(mod1, newdata = test[,-2])
 pred2<- predict(mod2,newdata = test[,-2])
 
+## Calculando el Pseudocoeficiente de determinación.
+numerador <- (test$Unidades-pred0)^2
+denominador <- (test$Unidades - mean(test$Unidades))^2
+PseudoR2_0 <-1 - (sum(numerador)/sum(denominador))
 
-mean((test$Unidades - pred0)^2)
-mean((test$Unidades - pred1)^2)
-mean((test$Unidades - (pred2^2))^2)
+numerador <- (test$Unidades-pred1)^2
+PseudoR2_1 <-1 - (sum(numerador)/sum(denominador))
+
+numerador <- (test$Unidades-pred2^2)^2
+PseudoR2_2 <-1 - (sum(numerador)/sum(denominador))
+
+
+metricas_test <- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
+                      "MSE"=c(mean((test$Unidades - pred0)^2),
+                              mean((test$Unidades - pred1)^2),
+                              mean((test$Unidades - (pred2^2))^2)),
+                      "R pseudo2"= c(PseudoR2_0,PseudoR2_1,PseudoR2_2))
+metricas_test %>% kbl() %>%  kable_styling(font_size = 12)
 ```
+
 
 ```{r}
 db2018<-readRDS("db_2018.rds")
+```
+
+```{reval=F}
+pred0<- predict(mod0, newdata = db2018[,-2])
+pred1<- predict(mod1, newdata = db2018[,-2])
+pred2<- predict(mod2,newdata = db2018[,-2])
 ```
 
 
