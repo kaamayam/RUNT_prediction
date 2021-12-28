@@ -20,6 +20,116 @@ library(kableExtra)
 require(gridExtra)
 library(gamlss)
 ```
+#Introducción
+
+El presente trabajo trata sobre la predicción del número de vehículos registrados en el sistema de tránsito nacional RUNT a través de un modelo lineal para tratar de explicar la relación que existe entre una
+variable dependiente (variable respuesta) que en nuestro caso es el número de vehículos registrados por día y un conjunto de variables independientes (variables explicativas) X1,..., Xn, las cuales definiremos más adelante. Este modelo predictivo será utilizado para predecir todo el año 2018.
+
+Para llevar a cabo el desarrollo del trabajo nos apoyamos de en los registros que están en la base de datos "registros_autos_entrenamiento.xlsx" el cual contiene la cantidad de vehículos registrados desde el 1 de enero del 2012 hasta el 31 de diciembre del 2017. También, se creó una aplicación shiny con el propósito de que una persona pueda hacer uso del modelo predictivo ingresando una respectiva fecha y con ello obtener predicciones del número de vehículos que se registrarán en ese día, en el siguiente enlace - - - - - se encuentra disponible un video explicativo sobre cómo usar dicha información aplicación.
+
+Ahora bien, las base de datos inicial y la base de datos con las nuevas variables que se consideraron se encuentran en el siguiente repositorio al igual que el código desarrollado para la realización del trabajo -----------------------.
+
+
+# Definición de las variables explicativas
+
+# Exploración de la base de datos final
+
+
+```{r}
+Año= c("2012","2013","2014","2015","2016","2017")
+Cantidad_registros= c(311920, 295803, 327957, 284916, 254893, 240378)
+
+db=data.frame(Año,Cantidad_registros)
+db
+
+gr4 <- ggplot(db, aes(x=Año, y=Cantidad_registros, fill=Año)) + geom_bar(stat="identity")+ labs(title="Cantidad de registros por año")+
+  theme (plot.title = element_text(family="Comic Sans MS",
+                                   size=rel(1.5),  
+                                   vjust=2,  
+                                   face="bold", 
+                                   color="black", 
+                                   lineheight=1.0)) + 
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_fill_brewer(palette = "Set3")+
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),axis.title = element_blank()) 
+gr4
+```
+
+
+El año donde se registraron más vehiculos en el RUNT fue el 2014.
+
+```{r}
+MES=c("January","February","March","April","May","June","July","August","September","October","November","December")
+Cantidad_registro= c(115653, 132001, 140967,137742,141168, 133853,142714,144291,146002,146319,140249,194908)
+
+dI=data.frame(Año,Cantidad_registro)
+dI
+
+gr1 <- ggplot(dI, aes(x=MES, y=Cantidad_registro, fill=MES)) + geom_bar(stat="identity")+ labs(title="Cantidad de registros por mes")+coord_flip()+
+  theme (plot.title = element_text(family="Comic Sans MS",
+                                   size=rel(1.5),  
+                                   vjust=2,  
+                                   face="bold", 
+                                   color="black", 
+                                   lineheight=1.0)) + 
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_fill_brewer(palette = "Set3")+
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),axis.title = element_blank(),legend.position="none") 
+gr1
+
+```
+
+
+Diciembre fue en promedio el mes con más cantidad de registros.
+
+
+
+En la siguiente tabla se pueden apreciar las fechas desde el 2012 hasta el 2017 donde se presentaron más de 2500 registros, cabe resaltar que estas fechas corresponden en su mayoria al ultimo día del mes:
+
+```{r}
+
+fecha=c("2016-12-29", "2017-12-28", "2014-12-30", "2016-11-30", "2017-11-30", "2017-06-30","2015-12-30", "2017-10-31","2014-12-23","2014-10-31")
+Cantidad_regist= c(3603, 3449, 3437,3109,2977,2920,2775,2729,2593,2514)
+
+de=data.frame(fecha,Cantidad_regist)
+de
+```
+
+```{r}
+dia=c("Monday","Sunday","Saturday","Friday","Thursday","Tuesday","Wednesday")
+Cantidad_vehiculos= c(208582,893,107857, 368495,361025,314588,354427)
+ho=data.frame(dia,Cantidad_vehiculos)
+ho
+
+gr0 <- ggplot(ho, aes(x=dia, y=Cantidad_vehiculos, fill=dia)) + geom_bar(stat="identity")+ labs(title="Cantidad de registros por dia de la semana")+coord_flip()+
+  theme (plot.title = element_text(family="Comic Sans MS",
+                                   size=rel(1.5),  
+                                   vjust=2,  
+                                   face="bold", 
+                                   color="black", 
+                                   lineheight=1.0)) + 
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_fill_brewer(palette = "Set3")+
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),axis.title = element_blank(),legend.position="none") 
+gr0
+```
+
+
+El viernes en promedio fue el día de la semana donde se registró mayor cantidad de vehículos.
+
+
+En la siguiente tabla, se puede ver que dentro del conjunto de variables que se añadieron  a la base de datos, las festividades en  que se reportaron más de 4700  vehículos registrados desde el 2012 hasta el 2018 son las siguientes:
+```{r}
+Dia_de=c("Mujer","Navidad","Asunción de María","Inmaculada Concepción","Secretaria","Profesor","Arbol","Hallowen")
+cantidad_vehiculos=c(4789,5110,5226,5265,5282,5481,6547,11063)
+h=data.frame(Dia_de,cantidad_vehiculos)
+h
+```
+
+
+
+
+
 
 # Base de datos
 
