@@ -131,6 +131,11 @@ metricas<- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
                               AIC(mod1),
                               AIC(mod2)))
 metricas %>% kbl() %>%  kable_styling(font_size = 12)
+
+PsR2_0 <- summary(mod0)$r.squared
+PsR2_1 <- summary(mod1)$r.squared
+PsR2_2 <- summary(mod2)$r.squared
+
 ```
 
 ## Medidas de Evaluación
@@ -160,17 +165,17 @@ metricas_test <- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
 metricas_test %>% kbl() %>%  kable_styling(font_size = 12)
 ```
 
+# Variación Pseudo R2
+
+Se evalua la variación entre train 2014-2016, vs test 2017
 
 ```{r}
-db2018<-readRDS("db_2018.rds")
+variaR2 <- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
+                      "Variacion"= c(((PsR2_0-PseudoR2_0)/PsR2_0)*100,
+                                     ((PsR2_1-PseudoR2_1)/PsR2_1)*100,
+                                     ((PsR2_2-PseudoR2_2)/PsR2_2)*100))
+variaR2 %>% kbl() %>%  kable_styling(font_size = 12)
 ```
-
-```{reval=F}
-pred0<- predict(mod0, newdata = db2018[,-2])
-pred1<- predict(mod1, newdata = db2018[,-2])
-pred2<- predict(mod2,newdata = db2018[,-2])
-```
-
 
 
 # Predichos vs. observados
@@ -179,5 +184,15 @@ pred2<- predict(mod2,newdata = db2018[,-2])
 plot(train2$Unidades,((mod2$fitted.values)^2))
 ```
 
+# Evaluar 2018 a Entregar
 
+```{r}
+db2018<-readRDS("db_2018.rds")
+```
+
+```{r eval=F}
+pred0<- predict(mod0, newdata = db2018[,-2])
+pred1<- predict(mod1, newdata = db2018[,-2])
+pred2<- predict(mod2,newdata = db2018[,-2])
+```
 
