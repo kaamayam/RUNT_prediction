@@ -1,0 +1,131 @@
+```{r}
+install.packages("ggplot2")
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("corrplot")
+install.packages("kableExtra")
+install.packages("gridExtra")
+install.packages("gamlass")
+install.packages("caret")
+install.packages("glmnet")
+```
+
+
+
+```{r warning=F, message=F, results='hide'}
+
+library(tidyverse)
+library(kableExtra)
+require(gridExtra)
+library(gamlss)
+library(ggplot2)
+library(corrplot)
+library(dplyr)
+library(caret)
+```
+
+# Base de datos
+
+```{r}
+datos<-readRDS("C:/Users/pilim/Downloads/BaseFinal.rds")
+db2018<-readRDS("C:/Users/pilim/Downloads/db_2018.rds")
+
+```
+
+
+```{r}
+train<-filter(datos, year<= 2016)
+test <-filter(datos, year > 2016 )
+```
+
+
+# Modelo Lineal
+
+```{r}
+mod0 <- lm(Unidades ~. , data = train)
+```
+
+## Datos atípicos
+
+```{r out.width="60%"}
+P1 <- ggplot(train, aes(y=Unidades))+
+  geom_boxplot(fill='#FFCCC1',alpha=0.7)+
+  labs(title = 'Gráfico de cajas para la variable Unidad',
+       x = 'Unidades', y='Número de registros diarios RUNT',
+       color=NULL)
+cooksd <- cooks.distance(mod0)
+P2<- ggplot(train, aes(x=Unidades, y=cooksd)) + 
+  geom_point(col='black', fill='blue', shape=21, alpha=0.5)+ geom_hline(yintercept = 4*mean(cooksd, na.rm=T), color = "red")+ ggtitle("Distancias de Cook (Modelo Lineal")
+grid.arrange(P1, P2, ncol=2)
+```
+
+```{r}
+influential <- na.omit(as.numeric(names(cooksd)[(cooksd > (4/nrow(train)))]))
+train2 <- datos[-influential, ]
+```
+# Modelo Lineal
+
+```{r}
+mod1 <- lm(Unidades ~. , data = train2)
+summary(mod1)
+```
+
+## modelo seleccion hacia adelante
+```{r}
+mod3 <- step(mod1, direction = "forward",trace=1) 
+summary(mod3)
+
+
+```
+
+## modelo selección hacia atrás
+```{r}
+mod4 <- step(mod1, direction = "backward",trace=1) 
+summary(mod4)
+```
+
+
+```{r}
+car::vif(mod4)## hay presnecia de  multicolinealidad???  ## tengo la duda ahí 
+car::vif(mod3)
+car::vif(mod1)
+```
+
+##Modelo regresión Ridge
+
+
+
+```{r}
+library(glmnet)
+```
+
+```{r}
+x_train <- model.matrix(Unidades~., data = train2)[, -1]
+y_train <- train2$Unidades
+
+x_test <- model.matrix(Unidades~., data = test)[, -1]
+y_test <- test$Unidaes
+
+
+```
+
+```{r}
+ridge.model=glmnet(x_train,y_train,alpha =0) ## se queda cargando!!
+dim(coef(ridge.model))
+
+```
+
+```{r}
+#Mejor lambda con validaciÃ³n cruzada 
+sal.cv=cv.glmnet(x_train,y_train,alpha =0)
+plot(sal.cv)
+mejor.lambda =sal.cv$lambda.min
+mejor.lambda
+log(mejor.lambda)
+
+##hacer prediccion conmejor lambda
+coef(ridge.model)[,which(ridge.model$lambda==mejor.lambda)]
+pred=predict(ridge.model, s=mejor.lambda,newx = x.test)
+pred
+data.frame(RMSE=RMSE(pred,test$Unidades),Rsquare = R2(pred,test$Unidades))
+```
