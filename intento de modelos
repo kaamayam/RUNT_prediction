@@ -1,3 +1,4 @@
+
 ```{r}
 install.packages("ggplot2")
 install.packages("tidyverse")
@@ -35,7 +36,9 @@ db2018<-readRDS("C:/Users/pilim/Downloads/db_2018.rds")
 
 ```{r}
 train<-filter(datos, year<= 2016)
-test <-filter(datos, year > 2016 )
+test <-filter(datos, year> 2016 )
+testfinal= filter(datos[1829:2010,])
+
 ```
 
 
@@ -85,8 +88,11 @@ summary(mod4)
 ```
 
 
+
+
+
 ```{r}
-car::vif(mod4)## hay presnecia de  multicolinealidad???  ## tengo la duda ahí 
+car::vif(mod4)## hay presnecia de  multicolinealidad???
 car::vif(mod3)
 car::vif(mod1)
 ```
@@ -101,23 +107,26 @@ library(glmnet)
 
 ```{r}
 x_train <- model.matrix(Unidades~., data = train2)[, -1]
+X_escalada <- scale(x_train,center = TRUE, scale = TRUE)
+
 y_train <- train2$Unidades
 
 x_test <- model.matrix(Unidades~., data = test)[, -1]
-y_test <- test$Unidaes
-
+x_testfinal <- model.matrix(Unidades~., data = testfinal)[, -1]
+x_test2018 <- model.matrix(Unidades~., data = db2018)
 
 ```
 
 ```{r}
-ridge.model=glmnet(x_train,y_train,alpha =0) ## se queda cargando!!
+ridge.model=glmnet(X_escalada,y_train,alpha =0)
 dim(coef(ridge.model))
 
 ```
 
+
 ```{r}
-#Mejor lambda con validaciÃ³n cruzada 
-sal.cv=cv.glmnet(x_train,y_train,alpha =0)
+#Mejor lambda con validación cruzada 
+sal.cv=cv.glmnet(X_escalada,y_train,alpha =0)
 plot(sal.cv)
 mejor.lambda =sal.cv$lambda.min
 mejor.lambda
@@ -125,7 +134,111 @@ log(mejor.lambda)
 
 ##hacer prediccion conmejor lambda
 coef(ridge.model)[,which(ridge.model$lambda==mejor.lambda)]
-pred=predict(ridge.model, s=mejor.lambda,newx = x.test)
+pred=predict(ridge.model, s=mejor.lambda,newdata = x_test)
 pred
 data.frame(RMSE=RMSE(pred,test$Unidades),Rsquare = R2(pred,test$Unidades))
 ```
+
+
+
+
+
+
+## Medidas de entrenamiento
+
+```{r}
+metricas<- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5"),
+                      "MSE"=c(mean((train2$Unidades - fitted(mod3)^2)^2),
+                              mean((train2$Unidades - fitted(mod4)^2)^2),
+                              mean((train2$Unidades - fitted(ridge.model)^2)^2
+                      "R pseudo2"= c(summary(mod3)$r.squared,
+                              summary(mod4)$r.squared,
+                              summary(ridge.model)$r.squared),
+                      "AIC"=c(AIC(mod3),
+                              AIC(mod4),
+                              AIC(ridge.model)))
+metricas %>% kbl() %>%  kable_styling(font_size = 12)
+PsR2_3 <- summary(mod3)$r.squared
+PsR2_4 <- summary(mod4)$r.squared
+PsR2_5 <- summary(ridge.model)$r.squared
+```
+
+## Medidas de Evaluación
+
+```{r}
+pred3<- predict(mod3, newdata = test[,-2])
+pred4<- predict(mod4, newdata = test[,-2])
+pred5=predict(ridge.model, s=mejor.lambda,newdata = x_test)
+pred5
+one0=data.frame(RMSE=RMSE(pred3,test$Unidades),Rsquare = R2(pred3,test$Unidades))
+one1=data.frame(RMSE=RMSE(pred4,test$Unidades),Rsquare = R2(pred4,test$Unidades))
+one2=data.frame(RMSE=RMSE(pred5,test$Unidades),Rsquare = R2(pred5,test$Unidades))
+
+
+## Calculando el Pseudocoeficiente de determinación.
+numerador <- (test$Unidades-pred3)^2
+denominador <- (test$Unidades - mean(test$Unidades))^2
+PseudoR2_3 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (test$Unidades-pred4)^2
+PseudoR2_4 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (test$Unidades-pred5)^2
+PseudoR2_5 <-1 - (sum(numerador)/sum(denominador))
+metricas_test <- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
+                      "MSE"=c(mean((test$Unidades - (pred3))^2),
+                              mean((test$Unidades - (pred4))^2),
+                              mean((test$Unidades - (pred5))^2)),
+                      "R pseudo2"= c(PseudoR2_3,PseudoR4_1,PseudoR5_2))
+metricas_test %>% kbl() %>%  kable_styling(font_size = 12)
+```
+
+# Variación Pseudo R2
+
+Se evalua la variación entre train 2014-2016, vs test 2017
+
+```{r}
+variaR2 <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5"),
+                      "Variacion"= c(((PsR2_3-PseudoR2_3)/PsR2_3)*100,
+                                     ((PsR2_4-PseudoR2_4)/PsR2_4)*100,
+                                     ((PsR2_5-PseudoR2_5)/PsR2_5)*100))
+variaR2 %>% kbl() %>%  kable_styling(font_size = 12)
+```
+
+
+# Predichos vs. observados
+
+```{r, message=F, warning=F}
+plot(train2$Unidades,((mod3$fitted.values)^2))
+plot(train2$Unidades,((mod4$fitted.values)^2))
+plot(train2$Unidades,((ridge.model$fitted.values)^2))
+```
+
+# Evaluar 2018 a Entregar
+
+
+```{r eval=F}
+pred33<- predict(mod3, newdata = db2018[,-2])
+pred33
+pred44<- predict(mod4, newdata = db2018[,-2])
+pred44
+pred55=predict(ridge.model, s=mejor.lambda,newdata = x_test2018)
+pred55
+
+
+## en ese hay un error, db2018 no me lee bien en ningun modelo poruqe creo que al no estar la columna unidades se corre el número de las demás columnas y no queda igual que el número de columna de train
+dos0=data.frame(RMSE=RMSE(pred33,db2018$Unidades),Rsquare = R2(pred33,db2018$Unidades))
+dos1=data.frame(RMSE=RMSE(pred44,db2018$Unidades),Rsquare = R2(pred44,db2018$Unidades))
+dos2=data.frame(RMSE=RMSE(pred55,db2018$Unidades),Rsquare = R2(pred55,db2018$Unidades))
+
+```
+# datos primer semestre de 2017
+pred_3<- predict(mod3, newdata = testfinal)
+pred_3
+pred_4<- predict(mod4, newdata = testfinal)
+pred_4
+pred_5=predict(ridge.model, s=mejor.lambda,newdata = x_testfinal)
+pred_5
+
+
+tres0=data.frame(RMSE=RMSE(pred_3,testfinal$Unidades),Rsquare = R2(pred_3,testfinal$Unidades))
+tres1=data.frame(RMSE=RMSE(pred_4,testfinal$Unidades),Rsquare = R2(pred_4,testfinal$Unidades))
+tres2=data.frame(RMSE=RMSE(pred_5,testfinal$Unidades),Rsquare = R2(pred_5,testfinal$Unidades))
