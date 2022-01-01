@@ -1,4 +1,5 @@
 
+
 ```{r}
 install.packages("ggplot2")
 install.packages("tidyverse")
@@ -28,8 +29,8 @@ library(caret)
 # Base de datos
 
 ```{r}
-datos<-readRDS("C:/Users/pilim/Downloads/BaseFinal.rds")
-db2018<-readRDS("C:/Users/pilim/Downloads/db_2018.rds")
+datos<-readRDS("C:/Users/Pilar/Downloads/BaseFinal.rds")
+db2018<-readRDS("C:/Users/Pilar/Downloads/db_2018.rds")
 
 ```
 
@@ -97,7 +98,7 @@ car::vif(mod3)
 car::vif(mod1)
 ```
 
-##Modelo regresión Ridge
+##Modelo regresión Ridge para el modelo lasso alpha =1, el mismo código
 
 
 
@@ -107,7 +108,8 @@ library(glmnet)
 
 ```{r}
 x_train <- model.matrix(Unidades~., data = train2)[, -1]
-X_escalada <- scale(x_train,center = TRUE, scale = TRUE)
+X_escalada <- scale(x_train,center = TRUE, scale = TRUE)## salen negativos...
+
 
 y_train <- train2$Unidades
 
@@ -118,7 +120,7 @@ x_test2018 <- model.matrix(Unidades~., data = db2018)
 ```
 
 ```{r}
-ridge.model=glmnet(X_escalada,y_train,alpha =0)
+ridge.model=glmnet(x_train,y_train,alpha =0)
 dim(coef(ridge.model))
 
 ```
@@ -126,7 +128,7 @@ dim(coef(ridge.model))
 
 ```{r}
 #Mejor lambda con validación cruzada 
-sal.cv=cv.glmnet(X_escalada,y_train,alpha =0)
+sal.cv=cv.glmnet(x_train,y_train,alpha =0)
 plot(sal.cv)
 mejor.lambda =sal.cv$lambda.min
 mejor.lambda
@@ -134,9 +136,9 @@ log(mejor.lambda)
 
 ##hacer prediccion conmejor lambda
 coef(ridge.model)[,which(ridge.model$lambda==mejor.lambda)]
-pred=predict(ridge.model, s=mejor.lambda,newdata = x_test)
+pred=predict(ridge.model, s=mejor.lambda,newx = x_test)
 pred
-data.frame(RMSE=RMSE(pred,test$Unidades),Rsquare = R2(pred,test$Unidades))
+ess=data.frame(RMSE=RMSE(pred,test$Unidades),Rsquare = R2(pred,test$Unidades))
 ```
 
 
@@ -150,25 +152,34 @@ data.frame(RMSE=RMSE(pred,test$Unidades),Rsquare = R2(pred,test$Unidades))
 metricas<- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5"),
                       "MSE"=c(mean((train2$Unidades - fitted(mod3)^2)^2),
                               mean((train2$Unidades - fitted(mod4)^2)^2),
-                              mean((train2$Unidades - fitted(ridge.model)^2)^2
+                              mean((train2$Unidades - fitted((ridge.model)^2)^2),
                       "R pseudo2"= c(summary(mod3)$r.squared,
                               summary(mod4)$r.squared,
-                              summary(ridge.model)$r.squared),
+                              0.71249),
                       "AIC"=c(AIC(mod3),
                               AIC(mod4),
                               AIC(ridge.model)))
+                      
 metricas %>% kbl() %>%  kable_styling(font_size = 12)
+
+
+
+```
+```{r}
 PsR2_3 <- summary(mod3)$r.squared
 PsR2_4 <- summary(mod4)$r.squared
-PsR2_5 <- summary(ridge.model)$r.squared
+PsR2_5 <- 0.71249
 ```
+
+
+
 
 ## Medidas de Evaluación
 
 ```{r}
 pred3<- predict(mod3, newdata = test[,-2])
 pred4<- predict(mod4, newdata = test[,-2])
-pred5=predict(ridge.model, s=mejor.lambda,newdata = x_test)
+pred5=predict(ridge.model, s=mejor.lambda,newx = x_test)
 pred5
 one0=data.frame(RMSE=RMSE(pred3,test$Unidades),Rsquare = R2(pred3,test$Unidades))
 one1=data.frame(RMSE=RMSE(pred4,test$Unidades),Rsquare = R2(pred4,test$Unidades))
@@ -183,11 +194,11 @@ numerador <- (test$Unidades-pred4)^2
 PseudoR2_4 <-1 - (sum(numerador)/sum(denominador))
 numerador <- (test$Unidades-pred5)^2
 PseudoR2_5 <-1 - (sum(numerador)/sum(denominador))
-metricas_test <- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
+metricas_test <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5"),
                       "MSE"=c(mean((test$Unidades - (pred3))^2),
                               mean((test$Unidades - (pred4))^2),
                               mean((test$Unidades - (pred5))^2)),
-                      "R pseudo2"= c(PseudoR2_3,PseudoR4_1,PseudoR5_2))
+                      "R pseudo2"= c(PseudoR2_3,PseudoR2_4,PseudoR2_5))
 metricas_test %>% kbl() %>%  kable_styling(font_size = 12)
 ```
 
@@ -199,7 +210,7 @@ Se evalua la variación entre train 2014-2016, vs test 2017
 variaR2 <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5"),
                       "Variacion"= c(((PsR2_3-PseudoR2_3)/PsR2_3)*100,
                                      ((PsR2_4-PseudoR2_4)/PsR2_4)*100,
-                                     ((PsR2_5-PseudoR2_5)/PsR2_5)*100))
+                                     ((0.71249-PseudoR2_5)/0.71249)*100))
 variaR2 %>% kbl() %>%  kable_styling(font_size = 12)
 ```
 
@@ -231,14 +242,22 @@ dos2=data.frame(RMSE=RMSE(pred55,db2018$Unidades),Rsquare = R2(pred55,db2018$Uni
 
 ```
 # datos primer semestre de 2017
+
+```{r}
+
 pred_3<- predict(mod3, newdata = testfinal)
 pred_3
 pred_4<- predict(mod4, newdata = testfinal)
 pred_4
-pred_5=predict(ridge.model, s=mejor.lambda,newdata = x_testfinal)
+pred_5=predict(ridge.model, s=mejor.lambda,newx = x_testfinal)
 pred_5
 
 
 tres0=data.frame(RMSE=RMSE(pred_3,testfinal$Unidades),Rsquare = R2(pred_3,testfinal$Unidades))
 tres1=data.frame(RMSE=RMSE(pred_4,testfinal$Unidades),Rsquare = R2(pred_4,testfinal$Unidades))
 tres2=data.frame(RMSE=RMSE(pred_5,testfinal$Unidades),Rsquare = R2(pred_5,testfinal$Unidades))
+
+
+
+```
+
