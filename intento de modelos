@@ -1,5 +1,4 @@
 
-
 ```{r}
 install.packages("ggplot2")
 install.packages("tidyverse")
@@ -31,6 +30,7 @@ library(caret)
 ```{r}
 datos<-readRDS("C:/Users/Pilar/Downloads/BaseFinal.rds")
 db2018<-readRDS("C:/Users/Pilar/Downloads/db_2018.rds")
+db2018[20:31] <- lapply(db2018[20:31] , factor)
 
 ```
 
@@ -139,6 +139,7 @@ coef(ridge.model)[,which(ridge.model$lambda==mejor.lambda)]
 pred=predict(ridge.model, s=mejor.lambda,newx = x_test)
 pred
 ess=data.frame(RMSE=RMSE(pred,test$Unidades),Rsquare = R2(pred,test$Unidades))
+
 ```
 
 
@@ -227,12 +228,12 @@ plot(train2$Unidades,((ridge.model$fitted.values)^2))
 
 
 ```{r eval=F}
-pred33<- predict(mod3, newdata = db2018[,-2])
+pred33<- predict(mod0, newdata = db2018)
 pred33
-pred44<- predict(mod4, newdata = db2018[,-2])
+pred44<- predict(mod4, newdata = db2018)
 pred44
-pred55=predict(ridge.model, s=mejor.lambda,newdata = x_test2018)
-pred55
+##pred55=predict(ridge.model, s=mejor.lambda,newx = x_test2018)
+##pred55
 
 
 ## en ese hay un error, db2018 no me lee bien en ningun modelo poruqe creo que al no estar la columna unidades se corre el número de las demás columnas y no queda igual que el número de columna de train
@@ -260,4 +261,24 @@ tres2=data.frame(RMSE=RMSE(pred_5,testfinal$Unidades),Rsquare = R2(pred_5,testfi
 
 
 ```
+
+
+```{r}
+names(db2018)
+
+
+
+```
+
+
+```{r}
+str(db2018)
+str(datos)
+
+```
+
+
+
+
+
 
