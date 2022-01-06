@@ -1,0 +1,310 @@
+---
+title: "Untitled"
+author: "modeloregresiónensayo"
+date: "1/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+install.packages("ggplot2")
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("corrplot")
+install.packages("kableExtra")
+install.packages("gridExtra")
+install.packages("gamlass")
+install.packages("caret")
+install.packages("glmnet")
+```
+
+
+
+```{r warning=F, message=F, results='hide'}
+
+library(tidyverse)
+library(kableExtra)
+require(gridExtra)
+library(gamlss)
+library(ggplot2)
+library(corrplot)
+library(dplyr)
+library(caret)
+```
+
+# Base de datos
+
+```{r}
+datos<-readRDS("C:/Users/Pilar/Downloads/BaseFinal.rds")
+db2018<-readRDS("C:/Users/Pilar/Downloads/db_2018.rds")
+
+```
+
+
+```{r}
+train<-filter(datos, year<= 2016)
+test <-filter(datos, year> 2016 )
+testfinal= filter(datos[1831:2014,]) ## primer semestre del 2017
+
+
+ db2018 <- cbind(db2018,Unidades=c(0))
+testmitad2018= filter(db2018[1:181,]) ## primer semestre del 2018
+
+```
+
+
+# Modelo Lineal
+
+```{r}
+mod0 <- lm(Unidades ~. , data = train)
+```
+
+## Datos atípicos
+
+```{r out.width="60%"}
+P1 <- ggplot(train, aes(y=Unidades))+
+  geom_boxplot(fill='#FFCCC1',alpha=0.7)+
+  labs(title = 'Gráfico de cajas para la variable Unidad',
+       x = 'Unidades', y='Número de registros diarios RUNT',
+       color=NULL)
+cooksd <- cooks.distance(mod0)
+P2<- ggplot(train, aes(x=Unidades, y=cooksd)) + 
+  geom_point(col='black', fill='blue', shape=21, alpha=0.5)+ geom_hline(yintercept = 4*mean(cooksd, na.rm=T), color = "red")+ ggtitle("Distancias de Cook (Modelo Lineal")
+grid.arrange(P1, P2, ncol=2)
+```
+
+```{r}
+influential <- na.omit(as.numeric(names(cooksd)[(cooksd > (4/nrow(train)))]))
+train2 <- datos[-influential, ]
+```
+
+# Modelo Lineal
+
+```{r}
+mod1 <- lm(Unidades ~. , data = train2)
+summary(mod1)
+```
+
+## modelo seleccion hacia adelante
+```{r}
+mod3 <- step(mod1, direction = "forward",trace=1) 
+summary(mod3)
+
+
+```
+
+## modelo selección hacia atrás
+```{r}
+mod4 <- step(mod1, direction = "backward",trace=1) 
+summary(mod4)
+```
+
+
+
+
+
+
+
+##Modelo regresión lasso para el modelo ridge alpha =0, el mismo código
+
+
+
+```{r}
+library(glmnet)
+```
+
+```{r}
+x_train <- model.matrix(Unidades~., data = train2)[, -1]
+
+y_train <- train2$Unidades
+
+x_testfinal <- model.matrix(Unidades~., data = testfinal)[, -1]
+x_testmitad2018 <- model.matrix(Unidades~., data = testmitad2018)[, -1]
+x_test <- model.matrix(Unidades~., data = test)[, -1]
+
+```
+
+```{r}
+mod5=glmnet(x_train,y_train,alpha =1)
+dim(coef(mod5))
+
+```
+
+
+```{r}
+#Mejor lambda con validación cruzada 
+sal.cv=cv.glmnet(x_train,y_train,alpha =1)
+plot(sal.cv)
+mejor.lambda =sal.cv$lambda.min
+mejor.lambda
+log(mejor.lambda)
+
+##hacer prediccion conmejor lambda
+coef(mod5)[,which(mod5$lambda==mejor.lambda)]
+
+names(train2)
+str(test)
+
+
+```
+
+
+
+
+
+
+## Medidas de entrenamiento
+
+```{r}
+metricas<- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5"),
+                      "MSE"=c(mean((train2$Unidades - fitted(mod3))^2),
+                              mean((train2$Unidades - fitted(mod4))^2),
+                              mean((train2$Unidades -fitted(mod5)))^2), 
+                      "R pseudo2"= c(summary(mod3)$r.squared,
+                              summary(mod4)$r.squared,
+                              0.71249),
+                      "AIC"=c(AIC(mod3),
+                              AIC(mod4),
+                              AIC(mod5)))
+                      
+metricas %>% kbl() %>%  kable_styling(font_size = 12)
+
+## no ejecuta
+
+```
+
+```{r}
+PsR2_3 <- summary(mod3)$r.squared
+PsR2_4 <- summary(mod4)$r.squared
+PsR2_5 <- 0.71249
+```
+
+
+
+
+## Medidas de Evaluación en general 
+
+```{r}
+pred3<- predict(mod3, newdata = test[,-2])
+pred4<- predict(mod4, newdata = test[,-2])
+pred5=predict(mod5, s=mejor.lambda,newx = x_test)
+pred5
+one0=data.frame(RMSE=RMSE(pred3,test$Unidades),Rsquare = R2(pred3,test$Unidades))
+one1=data.frame(RMSE=RMSE(pred4,test$Unidades),Rsquare = R2(pred4,test$Unidades))
+one2=data.frame(RMSE=RMSE(pred5,test$Unidades),Rsquare = R2(pred5,test$Unidades))
+
+
+## Calculando el Pseudocoeficiente de determinación.
+numerador <- (test$Unidades-pred3)^2
+denominador <- (test$Unidades - mean(test$Unidades))^2
+PseudoR2_3 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (test$Unidades-pred4)^2
+PseudoR2_4 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (test$Unidades-pred5)^2
+PseudoR2_5 <-1 - (sum(numerador)/sum(denominador))
+metricas_test <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5"),
+                      "MSE"=c(mean((test$Unidades - (pred3))^2),
+                              mean((test$Unidades - (pred4))^2),
+                              mean((test$Unidades - (pred5))^2)),
+                      "R pseudo2"= c(PseudoR2_3,PseudoR2_4,PseudoR2_5))
+metricas_test %>% kbl() %>%  kable_styling(font_size = 12)
+```
+
+# Variación Pseudo R2
+
+Se evalua la variación entre train 2012-2016, vs test 2017
+
+```{r}
+variaR2 <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5"),
+                      "Variacion"= c(((PsR2_3-PseudoR2_3)/PsR2_3)*100,
+                                     ((PsR2_4-PseudoR2_4)/PsR2_4)*100,
+                                     ((0.71249-PseudoR2_5)/0.71249)*100))
+variaR2 %>% kbl() %>%  kable_styling(font_size = 12)
+
+## ojo con ese 0.71249
+```
+
+
+# Predichos vs. observados
+
+```{r, message=F, warning=F}
+plot(train2$Unidades,((mod3$fitted.values)^2))
+plot(train2$Unidades,((mod4$fitted.values)^2))
+plot(train2$Unidades,((ridge.model$fitted.values)^2))
+```
+
+# Evaluar 2018 a Entregar
+
+
+```{r eval=F}
+pred33<- predict(mod0, newdata = testmitad2018)
+pred33
+pred44<- predict(mod4, newdata = testmitad2018)
+pred44
+pred55=predict(mod5, s=mejor.lambda,newx = x_testmitad2018)
+pred55
+
+
+
+dos0=data.frame(RMSE=RMSE(pred33,testmitad2018$Unidades),Rsquare = R2(pred33,testmitad2018$unidades))
+dos1=data.frame(RMSE=RMSE(pred44,testmitad2018$Unidades),Rsquare = R2(pred44,testmitad2018$Unidades))
+dos2=data.frame(RMSE=RMSE(pred55,testmitad2018$Unidades),Rsquare = R2(pred55,testmitad2018$Unidades))
+
+str(testmitad2018)
+
+## preguntar como hallar el r2 y el mse en ese caso
+```
+# datos primer semestre de 2017 validación 
+
+```{r}
+
+pred_3<- predict(mod3, newdata = testfinal)
+
+pred_4<- predict(mod4, newdata = testfinal)
+
+pred_5=predict(mod5, s=mejor.lambda,newx = x_testfinal)
+
+
+
+tres0=data.frame(RMSE=RMSE(pred_3,testfinal$Unidades),Rsquare = R2(pred_3,testfinal$Unidades))
+
+tres1=data.frame(RMSE=RMSE(pred_4,testfinal$Unidades),Rsquare = R2(pred_4,testfinal$Unidades))
+
+tres2=data.frame(RMSE=RMSE(pred_5,testfinal$Unidades),Rsquare = R2(pred_5,testfinal$Unidades))
+
+
+
+```
+
+
+
+## datos primer semestre 2018
+```{r}
+
+
+predx<- predict(mod3, newdata = testmitad2018)
+
+predy<- predict(mod4, newdata = testmitad2018)
+
+predz=predict(ridge.model, s=mejor.lambda,newx = x_testmitad2018)
+
+
+
+tres0=data.frame(RMSE=RMSE(predx,testmitad2018$Unidades),Rsquare = R2(predx,testmitad2018$Unidades))
+
+tres1=data.frame(RMSE=RMSE(predy,testmitad2018$Unidades),Rsquare = R2(predy,testmitad2018$Unidades))
+
+tres2=data.frame(RMSE=RMSE(predz,testmitad2018$Unidades),Rsquare = R2(predz,testmitad2018$Unidades))
+
+```
+
+
+```{r}
+str(testmitad2018)
+```
+
+
