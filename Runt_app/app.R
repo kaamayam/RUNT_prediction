@@ -1,5 +1,6 @@
 ## app.R ##
 library(shinydashboard)
+library(shinydashboardPlus)
 library(shinythemes)
 library(tidyverse)
 
@@ -21,7 +22,7 @@ ui <- dashboardPage(
         sidebarMenu(
             menuItem("Predicciones", tabName = "dashboard", icon = icon("search")),
             menuItem("Enlaces Externos", tabName = "widgets", icon = icon("exchange-alt")),
-            #menuItem("Delete Tables", tabName = "dashboard3", icon = icon("trash-alt")),
+            #menuItem("Video", tabName = "dashboard3", icon = icon("trash-alt")),
             menuItem("Sobre nosotros", tabName = "widgets4", icon = icon("info-circle"))
         )
     ),
@@ -53,14 +54,43 @@ ui <- dashboardPage(
                                #verbatimTextOutput("pred"),
                                verbatimTextOutput("dateRangeText")
                         )
-                    ),
+                    )
                 
             ),
             
             # Second tab content
             tabItem(tabName = "widgets",
-                    h2("Update truckers table"),
-                    # Spreadsheet name and sheet name 
+                    fluidRow(
+                        shiny::HTML("<br><br><center> 
+                                     <h1>Video Explicativo</h1> 
+                                     </center>")),
+                    tags$div( align = "center",
+                              icon("tv", class = "fa-4x")
+                    ),
+                    
+                    div(
+                        style = 
+                            "height: 315px; background-color: white; width: 100%; position: relative; right:0;",
+                        tags$iframe(width="560", height="315", src="https://www.youtube.com/embed/rLNm1adTyog", 
+                                    frameborder="0", allow="accelerometer; autoplay; encrypted-media; gyroscope; 
+                                               picture-in-picture", allowfullscreen=NA)
+                    ),
+                    style="text-align:center",
+                    
+                    fluidRow(
+                        column(3),
+                        
+                        # Andre
+                        column(3, h3("Reporte Técnico"),
+                    tags$a(icon("file-invoice", class = "fa-4x"),
+                           href="https://rpubs.com/kaamayam/Accidentalidadtae")),
+                    
+                    
+                    column(3,h3("Repositorio"),
+                    tags$a(icon("github-square", class = "fa-4x"),
+                           href="https://github.com/kaamayam/Tae-AccidentalidadMed")),
+                    column(3)
+                    )
             ),
             
             # 3 tab content
@@ -70,8 +100,111 @@ ui <- dashboardPage(
             
             # 4 tab content
             tabItem(tabName = "widgets4",
-                    h2("About Us"),
-                    fluidRow()
+            #Titulo
+            shiny::HTML("<br><br><center> 
+                         <h1>Sobre nosotros</h1> 
+                        </center>"),
+                        tags$div( align = "center",
+                         icon("users", class = "fa-4x")
+                         ),
+
+                    fluidRow(
+                        column(2),
+                        column(8,
+                               # Panel for Background on Data
+                               div(class="panel panel-default",
+                                   div(class="panel-body",  
+                                       
+                                       img(src='stat.jpg',height="40%", width="40%", align = "left"),
+                                       tags$p(h6("Somos un grupo de estudiantes de la Universidad 
+                                                 Nacional de Colombia sede Medellín cuyo objetivo es la
+                                                 resolución de problemas mediante análisis estadístico,
+                                                 implementando técnicas de programación y machine learning.
+                                                 Así mismo implememtmos desarrollo de sus respectivas
+                                                 aplicaciones iteractivas")),
+                                       )
+                               ) # Closes div panel
+                        ), # Closes column
+                        column(2)
+                    ),
+                    
+                    # TEAM BIO
+                    
+                    fluidRow(
+                        
+                        style = "height:50px;"),
+                    
+                    fluidRow(
+                        column(2),
+                        
+                        # Andre
+                        column(2,
+                               div(class="panel panel-default", 
+                                   div(class="panel-body",  width = "600px",
+                                       align = "center",
+                                       div(
+                                           tags$img(src = "team.jpg", 
+                                                    width = "50px", height = "50px")
+                                       ),
+                                       div(
+                                           tags$h5("Andrea"),
+                                           tags$h6( tags$i("Estadística"))
+                                       )
+                                   )
+                               )
+                        ),
+                        # Sebas
+                        column(2,
+                               div(class="panel panel-default",
+                                   div(class="panel-body",  width = "600px", 
+                                       align = "center",
+                                       div(
+                                               tags$img(src = "team.jpg", 
+                                                    width = "50px", height = "50px")
+                                       ),
+                                       div(
+                                           tags$h5("Sebastián"),
+                                           tags$h6( tags$i("Estadístico"))
+                                       )
+                                   )
+                               )
+                        ),
+                        # Pili
+                        column(2,
+                               div(class="panel panel-default",
+                                   div(class="panel-body",  width = "600px", 
+                                       align = "center",
+                                       div(
+                                           tags$img(src = "team.jpg", 
+                                                    width = "50px", height = "50px")),
+                                       div(
+                                           tags$h5("Pilar"),
+                                           tags$h6( tags$i("Estadística"))
+                                       )
+                                   )
+                               )
+                        ),
+                        # Isa
+                        column(2,
+                               div(class="panel panel-default",
+                                   div(class="panel-body",  width = "600px", 
+                                       align = "center",
+                                       div(
+                                           tags$img(src = "team.jpg", 
+                                                    width = "50px", height = "50px")),
+                                       div(
+                                           tags$h5("Isabel"),
+                                           tags$h6( tags$i("Estadística"))
+                                       )
+                                       
+                                   )
+                               )
+                        ),
+                        column(2)
+                        
+                    ),
+                    fluidRow(style = "height:150px;")
+                    
             )
             #-------------
             

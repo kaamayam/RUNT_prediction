@@ -102,7 +102,7 @@ La base de datos final está compuesta por las siguientes variables:
 - **observance:** Fechas especiales no festivas en Colombia, con 29 niveles. Expresadas en tipo Dummy.
 
 ```{r}
-datos<-readRDS("BaseFinal.rds")
+datos<-readRDS("Runt_app/BaseFinal.rds")
 datos$Unidades<-as.integer(datos$Unidades)
 datos%>%kbl() %>%  kable_styling(font_size = 12) %>%
   kableExtra::scroll_box(width = "100%", height = "300px")
@@ -113,12 +113,12 @@ Se dividen los datos en train con los años de 2012 a 2016 y se realiza test con
 
 
 ```{r}
-holid<-readRDS("national_holidays.rds")
+holid<-readRDS("Runt_app/national_holidays.rds")
 data.frame("National Holidays"=unique(holid$name))%>%kbl() %>% kable_styling(font_size = 12) %>% kableExtra::scroll_box(width = "30%", height = "190px")
 ```
 
 ```{r}
-special<-readRDS("special_dates.rds")
+special<-readRDS("Runt_app/special_dates.rds")
 data.frame("Special dates"=unique(special$name)) %>% kbl() %>%  kable_styling(font_size = 12) %>% kableExtra::scroll_box(width = "30%", height = "190px")
 ```
 
