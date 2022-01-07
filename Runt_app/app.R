@@ -4,11 +4,11 @@ library(shinythemes)
 library(tidyverse)
 
 # bases de datos
-datos<-readRDS("../BaseFinal.rds")
+datos<-readRDS("BaseFinal.rds")
 datos$Unidades<-as.integer(datos$Unidades)
-holid<- readRDS(file = "../national_holidays.rds")
-special<- readRDS(file = "../special_dates.rds")
-modelo<- readRDS("../Modelo.rds")
+holid<- readRDS(file = "national_holidays.rds")
+special<- readRDS(file = "special_dates.rds")
+modelo<- readRDS("Modelo.rds")
 observance<- filter(special, type == "Observance")
 
 ui <- dashboardPage(
@@ -46,7 +46,7 @@ ui <- dashboardPage(
                                            start = "2018-01-06", end = "2018-01-06"
                             ),
                             # botton para graficar los mapas
-                            actionButton(inputId = "api2",label = "Continuar y graficar",icon=icon("brain")),
+                            actionButton(inputId = "api2",label = "Continuar y graficar",icon=icon("brain"))
                         )),
                         
                         column(6,

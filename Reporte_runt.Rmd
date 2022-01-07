@@ -168,43 +168,6 @@ mod2 <- lm(sqrt(Unidades) ~. , data = train2)
 #saveRDS(mod2, "Modelo.rds")
 ```
 
-```{r}
-datos<-readRDS("BaseFinal.rds")
-special<-readRDS("special_dates.rds")
-observance<- filter(special, type == "Observance")
-datos$Unidades<-as.integer(datos$Unidades)
-datos<- datos[,-c(8:30)]
-datos$observance <- ifelse(datos$Fecha %in% observance$date ,1,0) %>% factor()
-train<-filter(datos, year<= 2016)
-test <-filter(datos, year > 2016 )
-cooksd <- cooks.distance(mod0)
-influential <- na.omit(as.numeric(names(cooksd)[(cooksd > (4/nrow(train)))]))
-train2 <- datos[-influential, ]
-train2 <- datos[,-1]
-
-
-# Modelo red neuronal
-#library(neuralnet)
-#mod3 <- neuralnet(Unidades ~ ., data=train, hidden=c(3), threshold=0.01)
-```
-```{r}
-library(nnet)
-library(caret)
-
-model.nn <- train(Unidades ~ .,data = train2, method = "nnet")
-```
-```{r}
-print(model.nn)
-```
-```{r}
-pred3 <- predict(model.nn, test[,-2])
-accuracy <- sum(pred3 == test$Unidades)/length(test$Unidades)
-print(accuracy)
-```
-```{r}
-plot(varImp(model.nn))
-```
-
 
 
 ## Comparacion de modelos
@@ -291,7 +254,7 @@ pred2<- predict(mod2,newdata = db2018[,-2])
 
 ## Enlaces externos
 
-Se creó una aplicación shiny con el propósito de que una persona pueda hacer uso del modelo predictivo ingresando una respectiva fecha, en el siguiente enlace - - - - - se encuentra disponible un video explicativo sobre cómo usar dicha información aplicación.
+Se creó una aplicación shiny con el propósito de que una persona pueda hacer uso del modelo predictivo ingresando una respectiva fecha, en el siguiente enlace - - - - - se encuentra disponible un video explicativo sobre cómo usar dicha información aplicación. La aplicación se puede encontrar [Haciendo click aquí](https://kaamayam.shinyapps.io/Runt_app/)
 
 Ahora bien, las bases de datos, al igual que el código desarrollado para la realización del presente trabajo se encuentran en el siguiente repositorio de GitHub [Click Aquí](https://github.com/kaamayam/RUNT_prediction)
 
