@@ -1,0 +1,29 @@
+pred_3<- predict(mod3, newdata = testmitad2018)
+pred_4<- predict(mod4, newdata = testmitad2018)
+pred_5=predict(mod5, s=mejor.lambda,newx = x_testmitad2018)
+pred_6=predict(mod6, s=mejor.lambda2,newx = x_testmitad2018)
+pred_7=predict(mod7, s=elastic_lambda_opt,newx = x_testmitad2018)
+
+
+## Calculando el Pseudocoeficiente de determinación.
+numerador <- (testmitad2018$Unidades-pred_3)^2
+denominador <- (testmitad2018$Unidades - mean(testmitad2018$Unidades))^2
+PseudoR2_33 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (testmitad2018$Unidades-pred_4)^2
+PseudoR2_44 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (testmitad2018$Unidades-pred_5)^2
+PseudoR2_55 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (testmitad2018$Unidades-pred_6)^2
+PseudoR2_66 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (testmitad2018$Unidades-pred_7)^2
+PseudoR2_77 <-1 - (sum(numerador)/sum(denominador))
+metricas_test <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5","Modelo 6", "Modelo7"),
+                      "MSE"=c(mean((testmitad2018$Unidades - (pred_3))^2),
+                              mean((testmitad2018$Unidades - (pred_4))^2),
+                              mean((testmitad2018$Unidades - (pred_5))^2),
+                              mean((testmitad2018$Unidades - (pred_6))^2),mean((testmitad2018$Unidades - (pred_7))^2)),
+                              
+                      "R pseudo2"= c(PseudoR2_33,PseudoR2_44,PseudoR2_55,PseudoR2_66,PseudoR2_77))
+metricas_test %>% kbl() %>%  kable_styling(font_size = 12)
+
+
