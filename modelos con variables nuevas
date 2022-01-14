@@ -1,3 +1,400 @@
+---
+title: "Untitled"
+author: "modeloregresiónensayo"
+date: "1/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+install.packages("ggplot2")
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("corrplot")
+install.packages("kableExtra")
+install.packages("gridExtra")
+install.packages("gamlass")
+install.packages("caret")
+install.packages("glmnet")
+```
+
+
+
+```{r warning=F, message=F, results='hide'}
+
+library(tidyverse)
+library(kableExtra)
+require(gridExtra)
+library(gamlss)
+library(ggplot2)
+library(corrplot)
+library(dplyr)
+library(caret)
+library(readxl)
+```
+
+# Base de datos
+
+```{r}
+datos<-readRDS("C:/Users/Pilar/Downloads/BaseFinal.rds")
+
+db2018<-readRDS("C:/Users/Pilar/Downloads/db_2018.rds")
+db2018 <- cbind(db2018,Unidades=c(0))
+Variables<-read_excel("C:/Users/Pilar/Downloads/variables.xlsx")
+fechas<-read_excel("fechas.xlsx")
+
+
+```
+
+
+```{r}
+train_S<-filter(datos, year<= 2017)
+
+train<- inner_join(train_S,Variables,by="Fecha")
+test<- inner_join(db2018,Variables,by="Fecha")
+testfinal= filter(train[1831:2014,]) ## primer semestre del 2017
+
+testmitad2018= filter(test[1:181,]) ## primer semestre del 2018
+train$quincena=factor(x=train$quincena,c(1,0),c(1,0))
+```
+
+
+# Modelo Lineal
+
+```{r}
+mod0 <- lm(Unidades ~. , data = train)
+```
+
+## Datos atípicos
+
+```{r out.width="60%"}
+P1 <- ggplot(train, aes(y=Unidades))+
+  geom_boxplot(fill='#FFCCC1',alpha=0.7)+
+  labs(title = 'Gráfico de cajas para la variable Unidad',
+       x = 'Unidades', y='Número de registros diarios RUNT',
+       color=NULL)
+cooksd <- cooks.distance(mod0)
+P2<- ggplot(train, aes(x=Unidades, y=cooksd)) + 
+  geom_point(col='black', fill='blue', shape=21, alpha=0.5)+ geom_hline(yintercept = 4*mean(cooksd, na.rm=T), color = "red")+ ggtitle("Distancias de Cook (Modelo Lineal")
+grid.arrange(P1, P2, ncol=2)
+```
+
+```{r}
+influential <- na.omit(as.numeric(names(cooksd)[(cooksd > (4/nrow(train)))]))
+train2 <- datos[-influential, ]
+train2<- inner_join(train_S,Variables,by="Fecha")
+```
+
+# Modelo Lineal
+
+```{r}
+mod1 <- lm(Unidades ~. , data = train2)
+summary(mod1)
+
+
+```
+
+## modelo seleccion hacia adelante
+```{r}
+mod3 <- step(mod1, direction = "forward",trace=1) 
+summary(mod3)
+
+
+train.R2.mod3<- summary(mod3)$r.squared
+train.MSE.mod3= mean((train2$Unidades - fitted(mod3))^2)
+
+
+
+
+
+
+
+```
+
+## modelo selección hacia atrás
+```{r}
+mod4 <- step(mod1, direction = "backward",trace=1) 
+summary(mod4)
+
+
+train.R2.mod4<- summary(mod4)$r.squared
+train.MSE.mod4= mean((train2$Unidades - fitted(mod4))^2)
+
+```
+
+
+
+
+
+
+
+##Modelo regresión lasso para el modelo ridge alpha =0, el mismo código
+
+
+
+```{r}
+library(glmnet)
+```
+
+```{r}
+x_train <- model.matrix(Unidades~., data = train2)[, -1]
+
+y_train <- train2$Unidades
+
+
+x_testfinal <- model.matrix(Unidades~., data = testfinal)[, -1] ## testing para predecir primer semestre 2017
+
+
+x_db2018 <- model.matrix(Unidades~., data = test)[, -1] ## testing para predecir 2018
+
+
+
+x_testmitad2018 <- model.matrix(Unidades~., data = testmitad2018)[, -1]
+```
+
+```{r}
+mod5=glmnet(x_train,y_train,alpha =1)
+dim(coef(mod5))
+
+```
+
+
+```{r}
+#Mejor lambda con validación cruzada 
+sal.cv=cv.glmnet(x_train,y_train,alpha =1, nfolds = 10,
+              type.measure = "mse",
+              standardize  = TRUE
+           )
+
+plot(sal.cv)
+mejor.lambda =sal.cv$lambda.min
+mejor.lambda
+log(mejor.lambda)
+
+paste("Mejor valor de lambda encontrado:", sal.cv$lambda.min)
+
+## se entrena de nuevo el modelo con el mejor lambda
+
+mod5=glmnet(x_train,y_train,alpha =1,lambda = sal.cv$lambda.min, standardize = TRUE)
+
+coef(mod5)[,which(mod5$lambda==mejor.lambda)]
+
+## predicciones de train
+
+predicciones_train <- predict(mod5, newx = x_train)
+predicciones_train
+
+
+## medidas de train
+
+train.MSE.mod5 <- mean((predicciones_train - y_train)^2)
+train.R2.mod5 = R2(predicciones_train,y_train)
+
+
+
+
+
+```
+
+
+```{r}
+df_coeficientes <- coef(sal.cv) %>%
+                   as.matrix() %>%
+                   as_tibble(rownames = "predictor") %>%
+                   rename(coeficiente = s1)
+
+
+
+```
+
+## predictores que eligio el modelo ( no me corre bien!!!)
+```{r}
+df_coeficientes %>%
+  filter(
+    predictor != "(Intercept)",
+    coeficiente != 0
+)  
+
+
+
+
+```
+
+## modelo ridge
+
+
+
+
+
+
+
+
+
+```{r}
+
+mod6=glmnet(x_train,y_train,alpha =0)
+dim(coef(mod6))
+
+#Mejor lambda con validación cruzada 
+sl.cv=cv.glmnet(x_train,y_train,alpha =0, nfolds = 10,
+              type.measure = "mse",
+              standardize  = TRUE
+           )
+
+plot(sl.cv)
+mejor.lambda2 =sl.cv$lambda.min
+mejor.lambda2
+log(mejor.lambda2)
+
+paste("Mejor valor de lambda encontrado:", sl.cv$lambda.min)
+
+## se entrena de nuevo el modelo con el mejor lambda
+
+mod6=glmnet(x_train,y_train,alpha =0,lambda = sl.cv$lambda.min, standardize = TRUE)
+
+coef(mod6)[,which(mod6$lambda==mejor.lambda2)]
+
+## predicciones de train
+
+predicciones_train6 <- predict(mod6, newx = x_train)
+
+
+## medidas de train
+
+train.MSE.mod6 <- mean((predicciones_train6 - y_train)^2)
+train.R2.mod6 = R2(predicciones_train6,y_train)
+
+
+
+
+
+```
+
+
+
+
+
+```{r}
+df_coeficientes2 <- coef(sl.cv) %>%
+                   as.matrix() %>%
+                   as_tibble(rownames = "predictor") %>%
+                   rename(coeficiente = s1)
+
+
+
+```
+
+## predictores que eligio el modelo ( no me corre bien!!!)
+```{r}
+df_coeficientes2 %>%
+  filter(
+    predictor != "(Intercept)",
+    coeficiente != 0
+)  
+
+
+
+
+```
+
+
+
+
+
+```{r}
+
+# Modelo elastic net
+elastic.mod=glmnet(x=x_train, # Matriz de regresores
+                 y=y_train, #Vector de la variable a predecir
+                 alpha=0.5, # Indicador del tipo de regularizacion
+                 standardize = TRUE)
+
+# Coeficientes del modelo  
+
+
+
+## lamda optimo
+
+elastic_cv=cv.glmnet(x=x_train,y=y_train,alpha=0.5, standardize = T)
+
+plot(elastic_cv)
+
+# Selección lambda óptimo
+elastic_lambda_opt = elastic_cv$lambda.min
+
+# Entrenamiento modelo óptimo
+mod7 = glmnet(x=x_train, # Matriz de regresores
+                 y=y_train, #Vector de la variable a predecir
+                 alpha=0.5, # Indicador del tipo de regularizacion
+                 standardize = TRUE,  # Estandarizamos
+                 lambda = elastic_lambda_opt)
+
+# Salida estandar
+mod7
+
+## predicciones de train
+
+predicciones_train7 <- predict(mod7, newx = x_train)
+
+
+## medidas de train
+
+train.MSE.mod7 <- mean((predicciones_train7 - y_train)^2)
+train.R2.mod7 = R2(predicciones_train7,y_train)
+
+```
+
+
+
+
+
+
+## Medidas de  todo el 2018  validación (las calcula el profe)
+```{r}
+pred3<- predict(mod3, newdata = test)
+
+pred4<- predict(mod4, newdata = test)
+pred5=predict(mod5, s=mejor.lambda,newx = x_db2018)
+
+pred6=predict(mod6, s=mejor.lambda2,newx = x_db2018)
+
+pred7=predict(mod7, s=elastic_lambda_opt,newx = x_db2018)
+
+
+## Calculando el Pseudocoeficiente de determinación.
+numerador <- (test$Unidades-pred3)^2
+denominador <- (test$Unidades - mean(test$Unidades))^2
+PseudoR2_3 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (test$Unidades-pred4)^2
+PseudoR2_4 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (test$Unidades-pred5)^2
+PseudoR2_5 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (test$Unidades-pred6)^2
+PseudoR2_6 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (test$Unidades-pred7)^2
+PseudoR2_7 <-1 - (sum(numerador)/sum(denominador))
+metricas_test2018 <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5","Modelo 6", "Modelo7"),
+                      "MSE"=c(mean((test$Unidades - (pred3))^2),
+                              mean((test$Unidades - (pred4))^2),
+                              mean((test$Unidades - (pred5))^2),
+                              mean((test$Unidades - (pred6))^2),mean((test$Unidades - (pred7))^2)),
+                              
+                      "R pseudo2"= c(PseudoR2_3,PseudoR2_4,PseudoR2_5,PseudoR2_6,PseudoR2_7))
+metricas_test2018 %>% kbl() %>%  kable_styling(font_size = 12)
+
+```
+
+
+
+## medidas y predicciones para el primer semestre de 2018(las calcula el profe)
+
+
+
+```{r}
 pred_3<- predict(mod3, newdata = testmitad2018)
 pred_4<- predict(mod4, newdata = testmitad2018)
 pred_5=predict(mod5, s=mejor.lambda,newx = x_testmitad2018)
@@ -17,13 +414,113 @@ numerador <- (testmitad2018$Unidades-pred_6)^2
 PseudoR2_66 <-1 - (sum(numerador)/sum(denominador))
 numerador <- (testmitad2018$Unidades-pred_7)^2
 PseudoR2_77 <-1 - (sum(numerador)/sum(denominador))
-metricas_test <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5","Modelo 6", "Modelo7"),
+metricas_test2018_1 <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5","Modelo 6", "Modelo7"),
                       "MSE"=c(mean((testmitad2018$Unidades - (pred_3))^2),
                               mean((testmitad2018$Unidades - (pred_4))^2),
                               mean((testmitad2018$Unidades - (pred_5))^2),
                               mean((testmitad2018$Unidades - (pred_6))^2),mean((testmitad2018$Unidades - (pred_7))^2)),
                               
                       "R pseudo2"= c(PseudoR2_33,PseudoR2_44,PseudoR2_55,PseudoR2_66,PseudoR2_77))
-metricas_test %>% kbl() %>%  kable_styling(font_size = 12)
+metricas_test2018_1 %>% kbl() %>%  kable_styling(font_size = 12)
+
+
+
+```
+
+
+
+
+# predicciones y metricas datos primer semestre 2017
+
+```{r}
+pred13<- predict(mod3, newdata = testfinal)
+pred14<- predict(mod4, newdata = testfinal)
+pred15=predict(mod5, s=mejor.lambda,newx = x_testfinal)
+pred16=predict(mod6, s=mejor.lambda2,newx = x_testfinal)
+pred17=predict(mod7, s=elastic_lambda_opt,newx = x_testfinal)
+
+
+## Calculando el Pseudocoeficiente de determinación.
+numerador <- (testfinal$Unidades-pred13)^2
+denominador <- (testfinal$Unidades - mean(testfinal$Unidades))^2
+PseudoR233 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (testfinal$Unidades-pred14)^2
+PseudoR244 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (testfinal$Unidades-pred15)^2
+PseudoR255 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (testfinal$Unidades-pred16)^2
+PseudoR266 <-1 - (sum(numerador)/sum(denominador))
+numerador <- (testfinal$Unidades-pred17)^2
+PseudoR277 <-1 - (sum(numerador)/sum(denominador))
+metricas_test2017_1 <- data.frame("Modelo"=c("Modelo3","Modelo4","Modelo5","Modelo 6", "Modelo7"),
+                      "MSE"=c(mean((testfinal$Unidades - (pred13))^2),
+                              mean((testfinal$Unidades - (pred14))^2),
+                              mean((testfinal$Unidades - (pred15))^2),
+                              mean((testfinal$Unidades - (pred16))^2),mean((testfinal$Unidades - (pred17))^2)),
+                              
+                      "R pseudo2"= c(PseudoR233,PseudoR244,PseudoR255,PseudoR266,PseudoR277))
+metricas_test2017_1 %>% kbl() %>%  kable_styling(font_size = 12)
+
+
+
+
+
+```
+
+
+## PRIMER ARCHIVO PLANO CON LOS MODELOS ELEGIDOS
+
+```{r}
+pred<- predict(mod3, newdata = train2)
+pred
+
+falta a ese dataframe ponerle nombre en las columnas y la fecha por ejemplo 1= 01/01/2012 y así....
+
+```
+
+
+
+##SEGUNDO ARCHIVO PLANO
+
+```{r}
+
+predi<- predict(mod3, newdata = testmitad2018)
+
+
+tabla= cbind(predi, datos$Fecha)
+falta a ese dataframe ponerle nombre en las columnas y la fecha por ejemplo 1= 01/01/2012 y así....
+
+
+
+
+```
+
+
+
+## comparación medidas de train
+
+
+```{r}
+modelo <- c("Forward","Backward" ,"Ridge regression", "Lasso","Elasticmed")
+train.MSE <- c(train.MSE.mod3, train.MSE.mod4, train.MSE.mod5, train.MSE.mod6, train.MSE.mod7)
+train.R2 <- c(train.R2.mod3, train.R2.mod4, train.R2.mod5, train.R2.mod6,train.R2.mod7 )
+comparacion_train <- data.frame(modelo, train.MSE, train.R2)
+comparacion_train
+```
+
+```{r}
+
+
+
+
+```
+
+
+
+
+
+
+
+
 
 
