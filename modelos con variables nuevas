@@ -474,7 +474,11 @@ metricas_test2017_1 %>% kbl() %>%  kable_styling(font_size = 12)
 pred<- predict(mod3, newdata = train2)
 pred
 
-falta a ese dataframe ponerle nombre en las columnas y la fecha por ejemplo 1= 01/01/2012 y así....
+datos$Fecha <- as.factor(datos$Fecha)
+primerarchivo= cbind.data.frame(pred, FECHA= datos$Fecha)
+colnames(primerarchivo)[1] <- "PREDICCIÓN"
+
+##falta a ese dataframe ponerle nombre en las columnas y la fecha por ejemplo 1= 01/01/2012 y así....
 
 ```
 
@@ -487,10 +491,10 @@ falta a ese dataframe ponerle nombre en las columnas y la fecha por ejemplo 1= 0
 predi<- predict(mod3, newdata = testmitad2018)
 
 
-tabla= cbind(predi, datos$Fecha)
-falta a ese dataframe ponerle nombre en las columnas y la fecha por ejemplo 1= 01/01/2012 y así....
+testmitad2018$Fecha <- as.factor(testmitad2018$Fecha)
+segundoarchivo= cbind.data.frame(predi, FECHA= testmitad2018$Fecha)
 
-
+colnames(segundoarchivo)[1] <- "PREDICCIÓN"
 
 
 ```
