@@ -100,6 +100,9 @@ La base de datos final está compuesta por las siguientes variables:
 - **dia_num:** Número del día según el calendario, de tipo entero
 - **holi_bin:** Variable de tipo factor con 2 niveles, 1 si es un festivo nacional y 0 en caso contrario
 - **observance:** Fechas especiales no festivas en Colombia, con 29 niveles. Expresadas en tipo Dummy.
+- **dolar:** Es la cantidad de pesos colombianos por un dólar de los Estados Unidos en las respectivas fechas.
+-**quincena:** Son los días en que generalmente le pagan a un empleado en Colombia, los días 1 y 15 de cada mes.
+
 
 ```{r}
 datos<-readRDS("Runt_app/BaseFinal.rds")
@@ -109,7 +112,7 @@ datos%>%kbl() %>%  kable_styling(font_size = 12) %>%
 ```
 
 
-Se dividen los datos en train con los años de 2012 a 2016 y se realiza test con los datos del año 2017. A continuación se lista el nombre de los festivos nacionales y las fechas especiales no festivas respectivamente:  
+Se dividen los datos en train con los años de 2012 a 2017 y se realiza test con los datos del primer semestre del 2018. A continuación se lista el nombre de los festivos nacionales y las fechas especiales no festivas respectivamente:  
 
 
 ```{r}
@@ -249,12 +252,11 @@ pred1<- predict(mod1, newdata = db2018[,-2])
 pred2<- predict(mod2,newdata = db2018[,-2])
 ```
 
-## Modelo elegido
+## Modelos elegidos y métricas de error ???
 
 
 ## Enlaces externos
 
-Se creó una aplicación shiny con el propósito de que una persona pueda hacer uso del modelo predictivo ingresando una respectiva fecha, en el siguiente enlace - - - - - se encuentra disponible un video explicativo sobre cómo usar dicha información aplicación. La aplicación se puede encontrar [Haciendo click aquí](https://kaamayam.shinyapps.io/Runt_app/)
 
 Ahora bien, las bases de datos, al igual que el código desarrollado para la realización del presente trabajo se encuentran en el siguiente repositorio de GitHub [Click Aquí](https://github.com/kaamayam/RUNT_prediction)
 
