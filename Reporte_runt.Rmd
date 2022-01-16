@@ -19,6 +19,8 @@ library(tidyverse)
 library(kableExtra)
 require(gridExtra)
 library(gamlss)
+library(Hmisc,warn.conflicts=F, quietly=T) #Rezagos
+library(readxl)
 ```
 
 ## Introducción
@@ -27,7 +29,24 @@ El presente trabajo busca predecir el número de vehículos registrados a diario
 
 ## Análisis descriptivo
 
+```{r}
+datos<-readRDS("Runt_app/BaseFinal.rds")
+datos$Unidades<-as.integer(datos$Unidades)
+datos<- datos[,c(1:7)]#quitar observance 
+```
+
+
+```{r}
+library(readxl)
+TRM<- read_excel("TRM.xlsx")
+#add dolar variable
+datos <- left_join(x = datos, y = TRM[,c("Fecha","dolar")], 
+                          by="Fecha")
+datos<- datos[,-1] #quitar variable Fecha
+```
+
 Con base en la figura 1, se puede apreciar que el año donde se registraron más vehículos fue el 2014, con aproximadamente 327957 registros. Por otro lado el año con menos registros fue el 2017 con aproximadamente 240378. Con un aparente comportamiento decreciente desde el año 2014 al 2017.
+
 
 ```{r out.width="60%"}
 Año= c("2012","2013","2014","2015","2016","2017")
@@ -53,7 +72,7 @@ gr4 <- ggplot(db, aes(x=Año, y=Cantidad_registros, fill=Año)) + geom_bar(stat=
 gr4
 ```
 
-Por otro lado, realizando un análisis de meses, el mes de Diciembre es aquel con una cifra significativamente más alta que los demás meses, esto puede ser debido a que los vendedores tienen un margen de ventas por cumplir, lo que hace que diciembre se convierta en un mes muy recomendado por los expertos para comprar carro y además en este mes se celebran Navidad. Por otro lado, el mes con menos registros resultó ser el mes de Enero, esto se observa en la figura 2.
+Por otro lado, testizando un análisis de meses, el mes de Diciembre es aquel con una cifra significativamente más alta que los demás meses, esto puede ser debido a que los vendedores tienen un margen de ventas por cumplir, lo que hace que diciembre se convierta en un mes muy recomendado por los expertos para comprar carro y además en este mes se celebran Navidad. Por otro lado, el mes con menos registros resultó ser el mes de Enero, esto se observa en la figura 2.
 
 ```{r out.width="60%"}
 MES=c("January","February","March","April","May","June","July","August","September","October","November","December")
@@ -112,19 +131,16 @@ gr0
 Ahora bien, decidimos incluir la variable precio del dólar en pesos ya que consideramos que cuando el dólar sube el peso colombiano tiende a devaluarse más y esto puede influir negativamente en la compra de autos en el país. En la figura 4 se puede ver que la correlación entre precio del dólar y Unidades es negativa aunque no es fuerte.
 
 
-```{r}
-ggplot(data = datoslimp, aes(x = datoslimp$dolar, y = datoslimp$Unidades)) +
-  geom_smooth(method = lm, se = FALSE, col="red") +
-  geom_point()+
-  labs(title = "Gráfico correlación dólar vs Unidades registradas",
-       caption = "Figura 4",
+```{r out.width="60%", message=FALSE, warning=F}
+ggplot(data = datos, aes(x = dolar, y = Unidades)) +
+  geom_smooth(method = lm , se = FALSE, col="red") +
+  geom_point(col="blue")+labs(title = "Gráfico correlación dólar vs Unidades registradas",caption = "Figura 4",
        x = "Precio del dólar",
        y = "Unidades registradas")+
   theme(plot.title = element_text(hjust = 0.5))
-  
-  
 ```
-## Base de datos
+
+# Base de datos
 
 La base de datos final está compuesta por las siguientes variables:
 
@@ -134,20 +150,23 @@ La base de datos final está compuesta por las siguientes variables:
 - **dia:** Día de tipo factor con 7 niveles
 - **dia_num:** Número del día según el calendario, de tipo entero
 - **holi_bin:** Variable de tipo factor con 2 niveles, 1 si es un festivo nacional y 0 en caso contrario
-- **observance:** Fechas especiales no festivas en Colombia, con 29 niveles. Expresadas en tipo Dummy.
+- **observance:** Fechas especiales no festivas en Colombia
 - **dolar:** Es la cantidad de pesos colombianos por un dólar de los Estados Unidos en las respectivas fechas.
--**quincena:** Son los días en que generalmente le pagan a un empleado en Colombia, los días 1 y 15 de cada mes.
 
 
 ```{r}
-datos<-readRDS("Runt_app/BaseFinal.rds")
-datos$Unidades<-as.integer(datos$Unidades)
 datos%>%kbl() %>%  kable_styling(font_size = 12) %>%
   kableExtra::scroll_box(width = "100%", height = "300px")
 ```
 
 
-Se dividen los datos en train con los años de 2012 a 2017 y se realiza test con los datos del primer semestre del 2018. A continuación se lista el nombre de los festivos nacionales y las fechas especiales no festivas respectivamente:  
+Se dividen los datos en train con los años de 2012 a 2017 y se testiza test con los datos del primer semestre del 2018. A continuación se lista el nombre de los festivos nacionales y las fechas especiales no festivas respectivamente:  
+
+```{r}
+#TRAIN & TEST
+train<- filter(datos, datos$year<=2016)
+test<- filter(datos, datos$year>2016)
+```
 
 
 ```{r}
@@ -160,90 +179,117 @@ special<-readRDS("Runt_app/special_dates.rds")
 data.frame("Special dates"=unique(special$name)) %>% kbl() %>%  kable_styling(font_size = 12) %>% kableExtra::scroll_box(width = "30%", height = "190px")
 ```
 
-```{r}
-train<-filter(datos, year<= 2016)
-test <-filter(datos, year > 2016 )
-```
 
 ```{r}
-# Modelo Lineal Basico
-mod0 <- lm(Unidades ~. , data = train)
+# Modelo Lineal Basico Crudo
+mod0 <- lm(Unidades ~. , data = datos)
+#plot(x = datos$Unidades,mod0$fitted.values)
 ```
 
-## Datos atípicos
+## Outliers
 
-```{r out.width="60%"}
-P1 <- ggplot(train, aes(y=Unidades))+
+A continuación se puede observar un gráfico de cajas para la variable Unidades, donde se puede observar que la media del número de registros diarios se encuentra alrededor de 900[CORREGIR], además de una cantidad de registros atípicos, con valores entre los 2500 y más de 3500 en un día. Así entonces se procede a remover dichos valores de la base de entrenamiento.
+
+
+```{r out.width="40%"}
+ggplot(datos, aes(y=Unidades))+
   geom_boxplot(fill='#FFCCC1',alpha=0.7)+
   labs(title = 'Gráfico de cajas para la variable Unidad',
        x = 'Unidades', y='Número de registros diarios RUNT',
        color=NULL)
-
-cooksd <- cooks.distance(mod0)
-P2<- ggplot(train, aes(x=Unidades, y=cooksd)) + 
-  geom_point(col='black', fill='blue', shape=21, alpha=0.5)+ geom_hline(yintercept = 4*mean(cooksd, na.rm=T), color = "red")+ ggtitle("Distancias de Cook (Modelo Lineal")
-
-grid.arrange(P1, P2, ncol=2)
+#TRAIN & TEST
+p70 <- quantile(x = datos$Unidades,probs = .7)
+datos2 <- datos[datos$Unidades<p70,]
+train<- filter(datos2, datos2$year<=2016)
+test<- filter(datos2, datos2$year>2016)
 ```
 
-```{r}
-influential <- na.omit(as.numeric(names(cooksd)[(cooksd > (4/nrow(train)))]))
-train2 <- datos[-influential, ]
-```
+# Modelos
+
+[MEJORAR GRAFICOS CON GGPLOT]
+
+```{r out.width="70%"}
+# Modelo Lineal Sin Outliers
+mod1 <- lm(Unidades ~. , data = train)
 
 
+## Modelo Raiz Sin Outliers
+mod2 <- lm(sqrt(Unidades) ~. , data = train)
 
-```{r}
-# Modelos Sin Outliers
-mod1 <- lm(Unidades ~. , data = train2)
-```
-
-
-
-```{r}
-## Modelo Raiz
-mod2 <- lm(sqrt(Unidades) ~. , data = train2)
+par(mfrow=c(1,2))
+plot(x = train$Unidades,mod1$fitted.values, 
+     main = "Modelo Lineal Sin Outliers",
+     col= "purple")
+plot(x = train$Unidades,(mod2$fitted.values)^2, 
+     main = "Modelo Raíz Sin Outliers",
+     col= "orange")
 #saveRDS(mod2, "Modelo.rds")
 ```
 
+```{r out.width="70%"}
+#arbol
+library(rpart)
+library(rpart.plot)
+mod3 <- rpart(formula = Unidades ~ .,data = train,method = "anova")
+rpart.plot(mod3)
+```
 
 
-## Comparacion de modelos
+# Comparacion de modelos
 
 Se hace uso de las siguientes medidas para comparar diferentes modelos:
 
 $$
-R_{p s e u d o}^{2}=1-\frac{\sum_{i=1}^{n}\left(y_{i}-\hat{y}_{i}\right)^{2}}{\sum_{i=1}^{n}\left(y_{i}-\bar{y}\right)^{2}}; \quad \quad \text { MSE }=\frac{1}{n} \sum\left(y_{n}-\overline{\mathrm{y}}\right)^{2}; \quad \quad A I C=2 k-2 \ln (L)
+A I C=2 k-2 \ln (L);\quad \quad  R_{p s e u d o}^{2}=1-\frac{\sum_{i=1}^{n}\left(y_{i}-\hat{y}_{i}\right)^{2}}{\sum_{i=1}^{n}\left(y_{i}-\bar{y}\right)^{2}}; \quad \quad \text { MSE }=\frac{1}{n} \sum\left(y_{n}-\overline{\mathrm{y}}\right)^{2}
 $$
 
 
-### Medidas de entrenamiento
+## Medidas de Entrenamiento
 
 ```{r}
-metricas<- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
-                      "MSE"=c(mean(mod0$residuals^2),
-                              mean(mod1$residuals^2),
-                              mean((train2$Unidades - fitted(mod2)^2)^2)),
-                      "R pseudo2"= c(summary(mod0)$r.squared,
-                              summary(mod1)$r.squared,
-                              summary(mod2)$r.squared),
-                      "AIC"=c(AIC(mod0),
-                              AIC(mod1),
-                              AIC(mod2)))
-metricas %>% kbl() %>%  kable_styling(font_size = 12)
-
+#Pseudos R2
 PsR2_0 <- summary(mod0)$r.squared
 PsR2_1 <- summary(mod1)$r.squared
 PsR2_2 <- summary(mod2)$r.squared
+# Pseudo R2 para el arbol
+pred<- predict(mod3,newdata = train[,-1])
+numerador <- (train$Unidades-pred)^2
+denominador <- (train$Unidades - mean(train$Unidades))^2
+PsR2_3 <- 1 - (sum(numerador)/sum(denominador))
+
+metricas<- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2","Modelo3"),
+                      "MSE"=c(mean(mod0$residuals^2),
+                              mean(mod1$residuals^2),
+                              mean((train$Unidades - fitted(mod2)^2)^2),
+                              mean((train$Unidades - pred)^2) ),
+                      "R pseudo2"= c(PsR2_0, 
+                                     PsR2_1, 
+                                     PsR2_2, 
+                                     PsR2_3),
+                      "AIC"=c(AIC(mod0),
+                              AIC(mod1),
+                              AIC(mod2),
+                              "NA"))
+metricas %>% kbl() %>%  kable_styling(font_size = 12)
 
 ```
 
-### Medidas de Evaluación
+## Medidas de Evaluación
+
 
 ```{r}
-pred0<- predict(mod0, newdata = test[,-2])
-pred1<- predict(mod1, newdata = test[,-2])
-pred2<- predict(mod2,newdata = test[,-2])
+#BASE 2018
+db2018<-readRDS("db_2018.rds")
+db2018<- filter(db2018, Fecha <= "2018-06-30")
+db2018 <- left_join(x = db2018, y = TRM[,c("Fecha","dolar")], 
+                          by="Fecha")
+```
+
+```{r}
+pred0<- predict(mod0, newdata = test[,-1])
+pred1<- predict(mod1, newdata = test[,-1])
+pred2<- predict(mod2,newdata = test[,-1])
+pred3<- predict(mod3,newdata = test[,-1])
 
 ## Calculando el Pseudocoeficiente de determinación.
 numerador <- (test$Unidades-pred0)^2
@@ -256,44 +302,63 @@ PseudoR2_1 <-1 - (sum(numerador)/sum(denominador))
 numerador <- (test$Unidades-pred2^2)^2
 PseudoR2_2 <-1 - (sum(numerador)/sum(denominador))
 
+## Psseudo R2 arbol
+numerador <- (test$Unidades-pred3)^2
+denominador <- (test$Unidades - mean(test$Unidades))^2
+PseudoR2_3 <-1 - (sum(numerador)/sum(denominador))
 
-metricas_test <- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
+```
+
+```{r}
+metricas_test <- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2","Modelo3"),
                       "MSE"=c(mean((test$Unidades - pred0)^2),
                               mean((test$Unidades - pred1)^2),
-                              mean((test$Unidades - (pred2^2))^2)),
-                      "R pseudo2"= c(PseudoR2_0,PseudoR2_1,PseudoR2_2))
+                              mean((test$Unidades - (pred2^2))^2),
+                              mean((test$Unidades - pred3)^2)),
+                      "R pseudo2"= c(PseudoR2_0,PseudoR2_1,PseudoR2_2,                                           PseudoR2_3))
 metricas_test %>% kbl() %>%  kable_styling(font_size = 12)
 ```
 
-### Variación Pseudo R2
+## Variación Pseudo R2
 
-Se evalua la variación entre train 2014-2016, vs test 2017
+Se evalua la variación entre train 2012-2016, vs test 2017
 
 ```{r}
-variaR2 <- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2"),
-                      "Variacion"= c(((PsR2_0-PseudoR2_0)/PsR2_0)*100,
+variaR2 <- data.frame("Modelo"=c("Modelo0","Modelo1","Modelo2","Modelo 3"),
+                      "Tipo"=c("Lineal","Lineal no Out","Trans.Raiz",
+                               "Arboles"),
+                      "Variacion R2"= c(((PsR2_0-PseudoR2_0)/PsR2_0)*100,
                                      ((PsR2_1-PseudoR2_1)/PsR2_1)*100,
-                                     ((PsR2_2-PseudoR2_2)/PsR2_2)*100))
+                                     ((PsR2_2-PseudoR2_2)/PsR2_2)*100,
+                                     ((PsR2_3-PseudoR2_3)/PsR2_3)*100) )
 variaR2 %>% kbl() %>%  kable_styling(font_size = 12)
 ```
 
+# Modelos elegidos
 
-```{r eval=F}
-#BASE 2018
-db2018<-readRDS("db_2018.rds")
-# Evaluar 2018 a Entregar
-pred0<- predict(mod0, newdata = db2018[,-2])
-pred1<- predict(mod1, newdata = db2018[,-2])
-pred2<- predict(mod2,newdata = db2018[,-2])
+Los modelos elegidos fueron: tal y tal. Así entonces, se vuelven a correr los modelos finales, con todos los datos desde el año 2012 hasta el año 2017 para realizar las predicciones al primer semestre del año 2018.
+
+```{r}
+#arbol con todos los datos
+library(rpart)
+mod_Final <- rpart(formula = Unidades ~ .,data = datos,method = "anova")
 ```
 
-## Modelos elegidos y métricas de error ???
+## Base de datos 2018 (para entregar)
+
+Las siguientes son las predicciones resultantes para el primer semestre del año 2018, realizadas por el modelo.
+
+```{r}
+#BASE 2018
+db2018<-readRDS("db_2018.rds")
+db2018<- filter(db2018, Fecha <= "2018-06-30")
+db2018 <- left_join(x = db2018, y = TRM[,c("Fecha","dolar")], 
+                          by="Fecha")
+pred3<- predict(mod_Final,newdata = db2018)
+pred3 %>%kbl() %>%  kable_styling(font_size = 12)%>% kableExtra::scroll_box(width = "30%", height = "190px")
+```
 
 
-## Enlaces externos
+# Enlaces externos
 
-
-Ahora bien, las bases de datos, al igual que el código desarrollado para la realización del presente trabajo se encuentran en el siguiente repositorio de GitHub [Click Aquí](https://github.com/kaamayam/RUNT_prediction)
-
-
-
+Ahora bien, las bases de datos, al igual que el código desarrollado para la testización del presente trabajo se encuentran en el siguiente repositorio de GitHub [Click Aquí](https://github.com/kaamayam/RUNT_prediction)
