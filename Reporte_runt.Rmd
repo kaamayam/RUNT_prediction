@@ -27,15 +27,17 @@ El presente trabajo busca predecir el número de vehículos registrados a diario
 
 ## Análisis descriptivo
 
-El Año donde se registraron más vehículos fue el 2014, con aproximadamente 327957 registros. Por otro lado el año con menos registros fue el 2017 con aproximadamente 240378. Con un aparente comportamiento decreciente desde el año 2014 al 2017.
+Con base en la figura 1, se puede apreciar que el año donde se registraron más vehículos fue el 2014, con aproximadamente 327957 registros. Por otro lado el año con menos registros fue el 2017 con aproximadamente 240378. Con un aparente comportamiento decreciente desde el año 2014 al 2017.
 
 ```{r out.width="60%"}
-Anio= c("2012","2013","2014","2015","2016","2017")
+Año= c("2012","2013","2014","2015","2016","2017")
 Cantidad_registros= c(311920, 295803, 327957, 284916, 254893, 240378)
-
-db=data.frame(Anio,Cantidad_registros)
-
-gr4 <- ggplot(db, aes(x=Anio, y=Cantidad_registros, fill=Anio)) + geom_bar(stat="identity")+ labs(title="Cantidad de registros por Año")+
+db=data.frame(Año,Cantidad_registros)
+gr4 <- ggplot(db, aes(x=Año, y=Cantidad_registros, fill=Año)) + geom_bar(stat="identity")+ labs(title = "Número registros por año",
+       caption = "Figura 1",
+       x = "# de registros",
+       y = "Año",
+       color = "Especie de Pingüino")+
   theme (plot.title = element_text(family="Comic Sans MS",
                                    size=rel(1.5),  
                                    vjust=2,  
@@ -44,18 +46,23 @@ gr4 <- ggplot(db, aes(x=Anio, y=Cantidad_registros, fill=Anio)) + geom_bar(stat=
                                    lineheight=1.0)) + 
   theme(plot.title = element_text(hjust = 0.5))+
   scale_fill_brewer(palette = "Set3")+
-  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),axis.title = element_blank()) 
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),axis.title = element_blank())+
+          geom_text(
+    aes(label = Cantidad_registros, y = Cantidad_registros ),
+    position = position_stack(vjust = 0.5))
 gr4
 ```
 
-Por otro lado, realizando un análisis de meses, el mes de Diciembre es aquel con una cifra significativamente más alta que los demás meses, esto puede ser debido a que los vendedores tienen un margen de ventas por cumplir, lo que hace que diciembre se convierta en un mes muy recomendado por los expertos para comprar carro. Por otro lado, el mes con menos registros resultó ser el mes de Enero.
+Por otro lado, realizando un análisis de meses, el mes de Diciembre es aquel con una cifra significativamente más alta que los demás meses, esto puede ser debido a que los vendedores tienen un margen de ventas por cumplir, lo que hace que diciembre se convierta en un mes muy recomendado por los expertos para comprar carro y además en este mes se celebran Navidad. Por otro lado, el mes con menos registros resultó ser el mes de Enero, esto se observa en la figura 2.
 
 ```{r out.width="60%"}
 MES=c("January","February","March","April","May","June","July","August","September","October","November","December")
 Cantidad_registro= c(115653, 132001, 140967,137742,141168, 133853,142714,144291,146002,146319,140249,194908)
 dI= data.frame(MES,Cantidad_registro)
-
-gr1 <- ggplot(dI,aes(x=MES, y=Cantidad_registro, fill=MES)) + geom_bar(stat="identity")+ labs(title="Cantidad de registros por mes")+coord_flip()+
+gr1 <- ggplot(dI,aes(x=MES, y=Cantidad_registro, fill=MES)) + geom_bar(stat="identity")+ labs(title="Cantidad de registros por mes",
+       caption = "Figura 2",
+       x = "# de registros",
+       y = "Mes")+coord_flip()+
   theme (plot.title = element_text(family="Comic Sans MS",
                                    size=rel(1.5),  
                                    vjust=2,  
@@ -64,31 +71,59 @@ gr1 <- ggplot(dI,aes(x=MES, y=Cantidad_registro, fill=MES)) + geom_bar(stat="ide
                                    lineheight=1.0)) + 
   theme(plot.title = element_text(hjust = 0.5))+
   scale_fill_brewer(palette = "Set3")+
-  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),axis.title = element_blank(),legend.position="none") 
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),axis.title = element_blank(),legend.position="none")+
+  geom_text(
+    aes(label = Cantidad_registro, y = Cantidad_registro),
+    position = position_stack(vjust = 0.5))
 gr1
-
 ```
 
-Resulta de interes conocer cómo varía el número de registros de acuerdo al día de la semana. Según el siguiente gráfico, todos los días tienen un comportamiento similar, a excepción de los días Sábado y Lunes donde hay considerablemente una cantidad menor, y el Domingo donde no se presta el servicio.
+Resulta de interes conocer cómo varía el número de registros de acuerdo al día de la semana. Según el siguiente gráfico (Figura 3), todos los días tienen un comportamiento similar, a excepción de los días Sábado y Lunes donde hay considerablemente una cantidad menor, y el Domingo donde no se presta el servicio.
 
 ```{r out.width="60%"}
 dia=c("Monday","Sunday","Saturday","Friday","Thursday","Tuesday","Wednesday")
 Cantidad_vehiculos= c(208582,893,107857, 368495,361025,314588,354427)
 ho=data.frame(dia,Cantidad_vehiculos)
-
-gr0 <- ggplot(ho, aes(x=dia, y=Cantidad_vehiculos, fill=dia)) + geom_bar(stat="identity")+ labs(title="Cantidad de registros por dia de la semana")+coord_flip()+
+gr0 <- ggplot(ho, aes(x=dia, y=Cantidad_vehiculos, fill=dia)) + geom_bar(stat="identity")+ labs(title = "Cantidad de registros por día",
+       caption = "Figura 3",
+       x = "# de registros",
+       y = "Día")+
   theme (plot.title = element_text(family="Comic Sans MS",
                                    size=rel(1.5),  
                                    vjust=2,  
                                    face="bold", 
                                    color="black", 
                                    lineheight=1.0)) + 
+  coord_flip()+
   theme(plot.title = element_text(hjust = 0.5))+
   scale_fill_brewer(palette = "Set3")+
-  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),axis.title = element_blank(),legend.position="none") 
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank(),axis.title = element_blank(),legend.position="none")+
+  geom_text(
+    aes(label = Cantidad_vehiculos, y = Cantidad_vehiculos ),
+    position = position_stack(vjust = 0.5))
+  
 gr0
+
+
 ```
 
+
+
+Ahora bien, decidimos incluir la variable precio del dólar en pesos ya que consideramos que cuando el dólar sube el peso colombiano tiende a devaluarse más y esto puede influir negativamente en la compra de autos en el país. En la figura 4 se puede ver que la correlación entre precio del dólar y Unidades es negativa aunque no es fuerte.
+
+
+```{r}
+ggplot(data = datoslimp, aes(x = datoslimp$dolar, y = datoslimp$Unidades)) +
+  geom_smooth(method = lm, se = FALSE, col="red") +
+  geom_point()+
+  labs(title = "Gráfico correlación dólar vs Unidades registradas",
+       caption = "Figura 4",
+       x = "Precio del dólar",
+       y = "Unidades registradas")+
+  theme(plot.title = element_text(hjust = 0.5))
+  
+  
+```
 ## Base de datos
 
 La base de datos final está compuesta por las siguientes variables:
