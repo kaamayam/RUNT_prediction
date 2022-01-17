@@ -134,9 +134,15 @@ Ahora bien, decidimos incluir la variable precio del dólar en pesos ya que cons
 ```{r out.width="60%", message=FALSE, warning=F}
 ggplot(data = datos, aes(x = dolar, y = Unidades)) +
   geom_smooth(method = lm , se = FALSE, col="red") +
-  geom_point(col="blue")+labs(title = "Gráfico correlación dólar vs Unidades registradas",caption = "Figura 4",
+  geom_point(col="blue")+labs(title = "Gráfico dólar vs Unidades registradas",caption = "Figura 4",
        x = "Precio del dólar",
        y = "Unidades registradas")+
+  theme (plot.title = element_text(family="Comic Sans MS",
+                                   size=rel(1.5),  
+                                   vjust=2,  
+                                   face="bold", 
+                                   color="black", 
+                                   lineheight=1.0))+
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
@@ -198,6 +204,12 @@ ggplot(datos, aes(y=Unidades))+
        x = 'Unidades', y='Número de registros diarios RUNT',
        color=NULL,
        caption = "Figura 5")+
+  theme (plot.title = element_text(family="Comic Sans MS",
+                                   size=rel(1.5),  
+                                   vjust=2,  
+                                   face="bold", 
+                                   color="black", 
+                                   lineheight=1.0))+
   theme(plot.title = element_text(hjust = 0.5))
 #TRAIN & TEST
 p70 <- quantile(x = datos$Unidades,probs = .7)
@@ -225,6 +237,12 @@ ggplot(tabla, aes(x=train$Unidades, y=a))+
   geom_point(shape=1, col="purple") +
   labs(title = "Modelo Lineal Sin Outliers", caption = "Figura 6",x = "Unidades", y = "Valores predichos") +
   geom_smooth(method=lm , color="red", se=TRUE)+
+  theme (plot.title = element_text(family="Comic Sans MS",
+                                   size=rel(1.5),  
+                                   vjust=2,  
+                                   face="bold", 
+                                   color="black", 
+                                   lineheight=1.0))+
   theme(plot.title = element_text(hjust = 0.5))
 
 b=(mod2$fitted.values)^2 
@@ -233,6 +251,12 @@ ggplot(tabla, aes(x=train$Unidades, y=b))+
   geom_point(shape=1, col="orange") +
   labs(title = "Modelo Raíz Sin Outliers", caption = "Figura 7",x = "Unidades", y = "Valores predichos") +
   geom_smooth(method=lm , color="red", se=TRUE)+
+  theme (plot.title = element_text(family="Comic Sans MS",
+                                   size=rel(1.5),  
+                                   vjust=2,  
+                                   face="bold", 
+                                   color="black", 
+                                   lineheight=1.0))+
   theme(plot.title = element_text(hjust = 0.5))
 #saveRDS(mod2, "Modelo.rds")
 ```
