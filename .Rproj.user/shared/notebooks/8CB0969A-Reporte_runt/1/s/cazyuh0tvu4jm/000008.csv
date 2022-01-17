@@ -1,0 +1,5 @@
+"0","variaR2 <- data.frame(""Modelo""=c(""Modelo0"",""Modelo1"",""Modelo2""),"
+"0","                      ""Variacion""= c(((PsR2_0-PseudoR2_0)/PsR2_0)*100,"
+"0","                                     ((PsR2_1-PseudoR2_1)/PsR2_1)*100,"
+"0","                                     ((PsR2_2-PseudoR2_2)/PsR2_2)*100))"
+"0","variaR2 %>% kbl() %>%  kable_styling(font_size = 12)"

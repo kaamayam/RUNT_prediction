@@ -1,0 +1,5 @@
+"0","mod0 <- lm(Unidades ~. , data = train)
+"
+"2","Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]) : 
+  contrasts can be applied only to factors with 2 or more levels
+"

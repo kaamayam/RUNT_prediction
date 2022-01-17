@@ -1,0 +1,3 @@
+"0","#TRAIN & TEST"
+"0","train<- filter(datos, datos$year<=2016)"
+"0","test<- filter(datos, datos$year>2016)"

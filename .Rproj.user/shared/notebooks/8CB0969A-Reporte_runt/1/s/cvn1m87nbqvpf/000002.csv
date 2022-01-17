@@ -1,0 +1,2 @@
+"0","# Modelo Lineal Basico"
+"0","mod0 <- lm(Unidades ~. , data = train)"

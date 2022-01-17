@@ -1,0 +1,3 @@
+"0","## Modelo Raiz"
+"0","mod2 <- lm(sqrt(Unidades) ~. , data = train2)"
+"0","#saveRDS(mod2, ""Modelo.rds"")"

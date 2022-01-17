@@ -1,0 +1,2 @@
+"0","special<-readRDS(""Runt_app/special_dates.rds"")"
+"0","data.frame(""Special dates""=unique(special$name)) %>% kbl() %>%  kable_styling(font_size = 12) %>% kableExtra::scroll_box(width = ""30%"", height = ""190px"")"

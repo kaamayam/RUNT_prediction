@@ -1,0 +1,4 @@
+"0","datos<-readRDS(""Runt_app/BaseFinal.rds"")"
+"0","datos$Unidades<-as.integer(datos$Unidades)"
+"0","datos%>%kbl() %>%  kable_styling(font_size = 12) %>%"
+"0","  kableExtra::scroll_box(width = ""100%"", height = ""300px"")"

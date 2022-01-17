@@ -1,0 +1,4 @@
+"0","pred_3<- predict(mod3, newdata = testmitad2018)
+"
+"2","Error in eval(predvars, data, env) : objeto 'dolar' no encontrado
+"

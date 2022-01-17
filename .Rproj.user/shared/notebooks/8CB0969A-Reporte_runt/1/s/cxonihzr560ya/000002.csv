@@ -1,0 +1,2 @@
+"0","influential <- na.omit(as.numeric(names(cooksd)[(cooksd > (4/nrow(train)))]))"
+"0","train2 <- datos[-influential, ]"

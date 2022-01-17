@@ -1,0 +1,4 @@
+"0","predi<- predict(mod3, newdata = testmitad2018)
+"
+"2","Error: variable 'Fecha' was fitted with type ""other"" but type ""factor"" was supplied
+"

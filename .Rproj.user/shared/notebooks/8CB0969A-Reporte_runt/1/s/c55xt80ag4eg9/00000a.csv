@@ -1,0 +1,4 @@
+"0","Dia_de=c(""Mujer"",""Navidad"",""Asunción de María"",""Inmaculada Concepción"",""Secretaria"",""Profesor"",""Arbol"",""Hallowen"")"
+"0","cantidad_vehiculos=c(4789,5110,5226,5265,5282,5481,6547,11063)"
+"0","h=data.frame(Dia_de,cantidad_vehiculos)"
+"0","h"

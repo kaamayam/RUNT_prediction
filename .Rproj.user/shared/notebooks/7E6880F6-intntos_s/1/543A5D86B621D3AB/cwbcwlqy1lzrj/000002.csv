@@ -1,0 +1,7 @@
+"0","df_coeficientes <- coef(sal.cv) %>%"
+"0","                   as.matrix() %>%"
+"0","                   as_tibble(rownames = ""predictor"") %>%"
+"0","                   rename(coeficiente = s1)"
+"0",""
+"0",""
+"0",""

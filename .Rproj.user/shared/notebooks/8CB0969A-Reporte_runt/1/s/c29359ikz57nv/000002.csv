@@ -1,0 +1,3 @@
+"0","datos<-readRDS(""Base_datos/BaseFinal.rds"")"
+"0","datos$Unidades<-as.integer(datos$Unidades)"
+"0","datos<- datos[,c(1:7)]#quitar observance "

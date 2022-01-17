@@ -1,0 +1,2 @@
+"0","p80 <- quantile(x = train$Unidades,probs = .8)"
+"0","train2 <- train[train$Unidades<p80,]"

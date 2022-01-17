@@ -1,0 +1,8 @@
+"0","train_S<-filter(datos, year<= 2016)"
+"0","test_S <-filter(datos, year> 2016 )"
+"0","train<- inner_join(train_S,Variables,by=""Fecha"")"
+"0","test<- inner_join(test_S,Variables,by=""Fecha"")"
+"0","testfinal= filter(datos[1831:2014,]) ## primer semestre del 2017"
+"0","db2018 <- cbind(db2018,Unidades=c(0))"
+"0","testmitad2018= filter(db2018[1:181,]) ## primer semestre del 2018"
+"0","train$quincena=factor(x=train$quincena,c(1,0),c(1,0))"

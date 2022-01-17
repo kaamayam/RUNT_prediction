@@ -1,0 +1,5 @@
+"0","MES=c(""January"",""February"",""March"",""April"",""May"",""June"",""July"",""August"",""September"",""October"",""November"",""December"")"
+"0","Cantidad_registro= c(115653, 132001, 140967,137742,141168, 133853,142714,144291,146002,146319,140249,194908)"
+"0",""
+"0","dI=data.frame(Año,Cantidad_registro)"
+"0","dI"

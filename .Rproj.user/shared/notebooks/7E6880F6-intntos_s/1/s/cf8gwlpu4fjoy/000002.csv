@@ -1,0 +1,4 @@
+"0","datos<-readRDS(""Runt_app/BaseFinal.rds"")"
+"0","db2018<-readRDS(""Runt_app/db_2018.rds"")"
+"0","Variables<-read_excel(""variables.xlsx"")"
+"0",""

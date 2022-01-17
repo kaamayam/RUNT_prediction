@@ -1,0 +1,5 @@
+"0","df_coeficientes2 %>%"
+"0","  filter("
+"0","    predictor != ""(Intercept)"","
+"0","    coeficiente != 0"
+"0",")  "

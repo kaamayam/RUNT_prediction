@@ -1,0 +1,4 @@
+"0","dia=c(""Monday"",""Sunday"",""Saturday"",""Friday"",""Thursday"",""Tuesday"",""Wednesday"")"
+"0","Cantidad_vehiculos= c(208582,893,107857, 368495,361025,314588,354427)"
+"0","ho=data.frame(dia,Cantidad_vehiculos)"
+"0","ho"

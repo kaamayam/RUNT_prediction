@@ -1,0 +1,6 @@
+"0","library(readxl)"
+"0","TRM<- read_excel(""Base_datos/TRM.xlsx"")"
+"0","#add dolar variable"
+"0","datos <- left_join(x = datos, y = TRM[,c(""Fecha"",""dolar"")], "
+"0","                          by=""Fecha"")"
+"0","datos<- datos[,-1] #quitar variable Fecha"

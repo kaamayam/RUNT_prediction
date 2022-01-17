@@ -1,0 +1,7 @@
+"0","metricas_test <- data.frame(""Modelo""=c(""Modelo0"",""Modelo1"",""Modelo2"",""Modelo3""),"
+"0","                      ""MSE""=c(mean((test$Unidades - pred0)^2),"
+"0","                              mean((test$Unidades - pred1)^2),"
+"0","                              mean((test$Unidades - (pred2^2))^2),"
+"0","                              mean((test$Unidades - pred3)^2)),"
+"0","                      ""R pseudo2""= c(PseudoR2_0,PseudoR2_1,PseudoR2_2,                                           PseudoR2_3))"
+"0","metricas_test %>% kbl() %>%  kable_styling(font_size = 12)"

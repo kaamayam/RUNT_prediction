@@ -1,0 +1,3 @@
+"0","plot(x = train$Unidades,(mod2$fitted.values)^2, "
+"0","     main = ""Modelo Raíz Sin Outliers"","
+"0","     col= ""orange"")"

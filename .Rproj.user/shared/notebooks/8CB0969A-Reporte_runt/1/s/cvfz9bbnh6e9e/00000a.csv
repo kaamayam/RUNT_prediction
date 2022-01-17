@@ -1,0 +1,5 @@
+"0",""
+"0","PsR2_0 <- summary(mod0)$r.squared"
+"0","PsR2_1 <- summary(mod1)$r.squared"
+"0","PsR2_2 <- summary(mod2)$r.squared"
+"0",""

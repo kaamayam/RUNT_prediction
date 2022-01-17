@@ -1,0 +1,2 @@
+"0","holid<-readRDS(""Base_datos/national_holidays.rds"")"
+"0","data.frame(""National Holidays""=unique(holid$name))%>%kbl() %>% kable_styling(font_size = 12) %>% kableExtra::scroll_box(width = ""30%"", height = ""190px"")"

@@ -1,0 +1,4 @@
+"0","par(mfrow=c(2,2))"
+"0","plot(mod0)"
+"2","not plotting observations with leverage one:
+  917"

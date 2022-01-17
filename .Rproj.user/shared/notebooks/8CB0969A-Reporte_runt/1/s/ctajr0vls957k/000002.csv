@@ -1,0 +1,3 @@
+"0","#arbol con todos los datos"
+"0","library(rpart)"
+"0","mod_Final <- rpart(formula = Unidades ~ .,data = datos,method = ""anova"")"

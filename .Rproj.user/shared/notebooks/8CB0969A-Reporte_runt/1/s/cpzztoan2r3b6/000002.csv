@@ -1,0 +1,5 @@
+"0","ggplot(datos, aes(y=Unidades))+"
+"0","  geom_boxplot(fill='#FFCCC1',alpha=0.7)+"
+"0","  labs(title = 'Gráfico de cajas para la variable Unidad',"
+"0","       x = 'Unidades', y='Número de registros diarios RUNT',"
+"0","       color=NULL)"

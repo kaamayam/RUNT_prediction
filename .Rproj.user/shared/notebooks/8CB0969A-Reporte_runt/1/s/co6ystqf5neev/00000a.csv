@@ -1,0 +1,1 @@
+"0","plot(train2$Unidades,((mod2$fitted.values)^2))"

@@ -1,0 +1,5 @@
+"0","#TRAIN & TEST"
+"0","p70 <- quantile(x = datos$Unidades,probs = .7)"
+"0","datos2 <- datos[datos$Unidades<p70,]"
+"0","train<- filter(datos2, datos2$year<=2016)"
+"0","test<- filter(datos2, datos2$year>2016)"
