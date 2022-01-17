@@ -33,6 +33,7 @@ El presente trabajo busca predecir el número de vehículos registrados a diario
 datos<-readRDS("Base_datos/BaseFinal.rds")
 datos$Unidades<-as.integer(datos$Unidades)
 datos<- datos[,c(1:7)]#quitar observance 
+
 ```
 
 
@@ -43,6 +44,8 @@ TRM<- read_excel("Base_datos/TRM.xlsx")
 datos <- left_join(x = datos, y = TRM[,c("Fecha","dolar")], 
                           by="Fecha")
 datos<- datos[,-1] #quitar variable Fecha
+train<- filter(datos, datos$year<=2016)
+test<- filter(datos, datos$year>2016)
 ```
 
 Con base en la figura 1, se puede apreciar que el año donde se registraron más vehículos fue el 2014, con aproximadamente 327957 registros. Por otro lado el año con menos registros fue el 2017 con aproximadamente 240378. Con un aparente comportamiento decreciente desde el año 2014 al 2017.
@@ -170,8 +173,7 @@ Se dividen los datos en train con los años de 2012 a 2017 y se testiza test con
 
 ```{r}
 #TRAIN & TEST
-train<- filter(datos, datos$year<=2016)
-test<- filter(datos, datos$year>2016)
+#train<- filter(datos, datos$year<=2016)
 ```
 
 
@@ -214,8 +216,7 @@ ggplot(datos, aes(y=Unidades))+
 #TRAIN & TEST
 p70 <- quantile(x = datos$Unidades,probs = .7)
 datos2 <- datos[datos$Unidades<p70,]
-train<- filter(datos2, datos2$year<=2016)
-test<- filter(datos2, datos2$year>2016)
+#train<- filter(datos2, datos2$year<=2016)
 ```
 
 # Modelos
@@ -313,11 +314,9 @@ metricas %>% kbl() %>%  kable_styling(font_size = 12)
 
 
 ```{r}
-#BASE 2018
-db2018<-readRDS("Base_datos/db_2018.rds")
-db2018<- filter(db2018, Fecha <= "2018-06-30")
-db2018 <- left_join(x = db2018, y = TRM[,c("Fecha","dolar")], 
-                          by="Fecha")
+#-------------------------------------------------------------------
+#-------------------------Test--------------------------
+#-------------------------------------------------------------------
 ```
 
 ```{r}
@@ -397,3 +396,9 @@ pred3 %>%kbl() %>%  kable_styling(font_size = 12)%>% kableExtra::scroll_box(widt
 # Enlaces externos
 
 Ahora bien, las bases de datos, al igual que el código desarrollado para la testización del presente trabajo se encuentran en el siguiente repositorio de GitHub [Click Aquí](https://github.com/kaamayam/RUNT_prediction)
+
+# Referencias
+
+
+
+
