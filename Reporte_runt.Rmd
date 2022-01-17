@@ -196,7 +196,9 @@ ggplot(datos, aes(y=Unidades))+
   geom_boxplot(fill='#FFCCC1',alpha=0.7)+
   labs(title = 'Gráfico de cajas para la variable Unidad',
        x = 'Unidades', y='Número de registros diarios RUNT',
-       color=NULL)
+       color=NULL,
+       caption = "Figura 5")+
+  theme(plot.title = element_text(hjust = 0.5))
 #TRAIN & TEST
 p70 <- quantile(x = datos$Unidades,probs = .7)
 datos2 <- datos[datos$Unidades<p70,]
@@ -206,7 +208,6 @@ test<- filter(datos2, datos2$year>2016)
 
 # Modelos
 
-[MEJORAR GRAFICOS CON GGPLOT]
 
 ```{r out.width="70%"}
 # Modelo Lineal Sin Outliers
@@ -217,12 +218,22 @@ mod1 <- lm(Unidades ~. , data = train)
 mod2 <- lm(sqrt(Unidades) ~. , data = train)
 
 par(mfrow=c(1,2))
-plot(x = train$Unidades,mod1$fitted.values, 
-     main = "Modelo Lineal Sin Outliers",
-     col= "purple")
-plot(x = train$Unidades,(mod2$fitted.values)^2, 
-     main = "Modelo Raíz Sin Outliers",
-     col= "orange")
+a=mod1$fitted.values
+
+tabla=data.frame(train$Unidades,a )
+ggplot(tabla, aes(x=train$Unidades, y=a))+
+  geom_point(shape=1, col="purple") +
+  labs(title = "Modelo Lineal Sin Outliers", caption = "Figura 6",x = "Unidades", y = "Valores predichos") +
+  geom_smooth(method=lm , color="red", se=TRUE)+
+  theme(plot.title = element_text(hjust = 0.5))
+
+b=(mod2$fitted.values)^2 
+tabla=data.frame(train$Unidades,b )
+ggplot(tabla, aes(x=train$Unidades, y=b))+
+  geom_point(shape=1, col="orange") +
+  labs(title = "Modelo Raíz Sin Outliers", caption = "Figura 7",x = "Unidades", y = "Valores predichos") +
+  geom_smooth(method=lm , color="red", se=TRUE)+
+  theme(plot.title = element_text(hjust = 0.5))
 #saveRDS(mod2, "Modelo.rds")
 ```
 
