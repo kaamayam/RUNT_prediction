@@ -33,17 +33,28 @@ El presente trabajo busca predecir el número de vehículos registrados a diario
 datos<-readRDS("Base_datos/BaseFinal.rds")
 datos$Unidades<-as.integer(datos$Unidades)
 datos<- datos[,c(1:7)]#quitar observance 
-
 ```
-
 
 ```{r}
 library(readxl)
 TRM<- read_excel("Base_datos/TRM.xlsx")
 #add dolar variable
-datos <- left_join(x = datos, y = TRM[,c("Fecha","dolar")], 
-                          by="Fecha")
+datos <- left_join(x = datos, y = TRM[,c("Fecha","dolar")], by="Fecha")
 datos<- datos[,-1] #quitar variable Fecha
+```
+
+```{r}
+#add tasas variable
+tasas<-read_excel("Base_datos/Tasas_emp.xlsx") %>% as.data.frame()
+colnames(tasas)<-c("Fecha","TOc","TDe")
+tasas<- separate(na.omit(tasas),"Fecha", into = c("year","mes"),sep = "-")
+tasas$year<-as.integer(tasas$year)
+tasas$mes<- as.integer(tasas$mes)
+tasas$mes<- as.factor(month.name[tasas$mes]) 
+datos<-left_join(x = datos, y = tasas , by=c("year","mes"))
+```
+
+```{r}
 train<- filter(datos, datos$year<=2016)
 test<- filter(datos, datos$year>2016)
 ```
@@ -159,7 +170,6 @@ La base de datos final está compuesta por las siguientes variables:
 - **dia:** Día de tipo factor con 7 niveles
 - **dia_num:** Número del día según el calendario, de tipo entero
 - **holi_bin:** Variable de tipo factor con 2 niveles, 1 si es un festivo nacional y 0 en caso contrario
-- **observance:** Fechas especiales no festivas en Colombia
 - **dolar:** Es la cantidad de pesos colombianos por un dólar de los Estados Unidos en las respectivas fechas.
 
 
@@ -169,13 +179,7 @@ datos%>%kbl() %>%  kable_styling(font_size = 12) %>%
 ```
 
 
-Se dividen los datos en train con los años de 2012 a 2017 y se testiza test con los datos del primer semestre del 2018. A continuación se lista el nombre de los festivos nacionales y las fechas especiales no festivas respectivamente:  
-
-```{r}
-#TRAIN & TEST
-#train<- filter(datos, datos$year<=2016)
-```
-
+Se dividen los datos en train con los años de 2012 a 2017 y se testiza test con los datos del primer semestre del 2018. A continuación se lista el nombre correspondiente a los festivos nacionales:  
 
 ```{r}
 holid<-readRDS("Base_datos/national_holidays.rds")
@@ -183,8 +187,8 @@ data.frame("National Holidays"=unique(holid$name))%>%kbl() %>% kable_styling(fon
 ```
 
 ```{r}
-special<-readRDS("Base_datos/special_dates.rds")
-data.frame("Special dates"=unique(special$name)) %>% kbl() %>%  kable_styling(font_size = 12) %>% kableExtra::scroll_box(width = "30%", height = "190px")
+# special<-readRDS("Base_datos/special_dates.rds")
+# data.frame("Special dates"=unique(special$name)) %>% kbl() %>%  kable_styling(font_size = 12) %>% kableExtra::scroll_box(width = "30%", height = "190px")
 ```
 
 
@@ -386,8 +390,8 @@ Las siguientes son las predicciones resultantes para el primer semestre del año
 #BASE 2018
 db2018<-readRDS("Base_datos/db_2018.rds")
 db2018<- filter(db2018, Fecha <= "2018-06-30")
-db2018 <- left_join(x = db2018, y = TRM[,c("Fecha","dolar")], 
-                          by="Fecha")
+db2018 <- left_join(x = db2018, y = TRM[,c("Fecha","dolar")], by="Fecha")
+db2018<-left_join(x = db2018, y = tasas , by=c("year","mes"))
 pred3<- predict(mod_Final,newdata = db2018)
 pred3 %>%kbl() %>%  kable_styling(font_size = 12)%>% kableExtra::scroll_box(width = "30%", height = "190px")
 ```
@@ -399,6 +403,11 @@ Ahora bien, las bases de datos, al igual que el código desarrollado para la tes
 
 # Referencias
 
+- Tasa representativa del mercado (TRM) Recuperado .....
+
+- DANE. Tasas de ocupación y desempleo. Banco de la república | Colombia.  Recuperado 16 de enero de 2022, de https://www.banrep.gov.co/es/estadisticas/tasas-ocupacion-y-desempleo
+
+- Holidays and observances in Colombia. (1995). Time and Date. Recuperado 17 de diciembre de 2021, de https://www.timeanddate.com/holidays/colombia/2012
 
 
 
