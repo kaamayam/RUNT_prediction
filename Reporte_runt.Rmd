@@ -30,6 +30,7 @@ El presente trabajo busca predecir el número de vehículos registrados a diario
 ## Análisis descriptivo
 
 ```{r}
+datosini<-readRDS("Base_datos/BaseFinal.rds")
 datos<-readRDS("Base_datos/BaseFinal.rds")
 datos$Unidades<-as.integer(datos$Unidades)
 datos<- datos[,c(1:7)]#quitar observance 
@@ -160,6 +161,8 @@ ggplot(data = datos, aes(x = dolar, y = Unidades)) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+
+
 # Base de datos
 
 La base de datos final está compuesta por las siguientes variables:
@@ -171,6 +174,10 @@ La base de datos final está compuesta por las siguientes variables:
 - **dia_num:** Número del día según el calendario, de tipo entero
 - **holi_bin:** Variable de tipo factor con 2 niveles, 1 si es un festivo nacional y 0 en caso contrario
 - **dolar:** Es la cantidad de pesos colombianos por un dólar de los Estados Unidos en las respectivas fechas.
+-**TOc**: Tasa de ocupación de Colombia
+-**TDe**: Tasa de desempleo de Colombia
+
+Las dos ultimas variables las quisimos tener en nuestros modelos para predecir los registros diarios del RUNT ya que pensamos que son  significativas y aportarán  explicabilidad al modelo.
 
 
 ```{r}
@@ -200,7 +207,7 @@ mod0 <- lm(Unidades ~. , data = datos)
 
 ## Outliers
 
-A continuación se puede observar un gráfico de cajas para la variable Unidades, donde se puede observar que la media del número de registros diarios se encuentra alrededor de 900[CORREGIR], además de una cantidad de registros atípicos, con valores entre los 2500 y más de 3500 en un día. Así entonces se procede a remover dichos valores de la base de entrenamiento.
+A continuación se puede observar un gráfico de cajas para la variable Unidades, donde se puede observar que la media del número de registros diarios se encuentra alrededor de 900, además de una cantidad de registros atípicos, con valores entre los 2500 y más de 3500 en un día. Así entonces se procede a remover dichos valores de la base de entrenamiento.
 
 
 ```{r out.width="40%"}
@@ -265,7 +272,7 @@ ggplot(tabla, aes(x=train$Unidades, y=b))+
   theme(plot.title = element_text(hjust = 0.5))
 #saveRDS(mod2, "Modelo.rds")
 ```
-
+##Modelo árbol de decisón
 ```{r out.width="70%"}
 #arbol
 library(rpart)
@@ -374,7 +381,7 @@ variaR2 %>% kbl() %>%  kable_styling(font_size = 12)
 
 # Modelos elegidos
 
-Los modelos elegidos fueron: Modelo 1 con lineal, Modelo 3 con árboles de regresión. Así entonces, se vuelven a correr los modelos finales, con todos los datos desde el año 2012 hasta el año 2017 para realizar las predicciones al primer semestre del año 2018.
+Los modelos elegidos fueron: Modelo 1 con lineal, Modelo 3 con árboles de regresión, esto a partir de las medias de entrenamiento y al ver que la variación entre el R2 de train t test era menor en estos dos modelos. Así entonces, se vuelven a correr los modelos finales, con todos los datos desde el año 2012 hasta el año 2017 para realizar las predicciones al primer semestre del año 2018.
 
 ```{r}
 #arbol con todos los datos
@@ -382,6 +389,30 @@ library(rpart)
 mod_Final <- rpart(formula = Unidades ~ .,data = datos,method = "anova")
 mod_Final2 <- lm(Unidades ~. , data = datos)
 ```
+
+
+## Metricas de train para los modelos escogidos con train= 2012-1017
+
+```{r}
+#Pseudos R2 para modelo1 (lineal)
+
+PsR2_4 <- summary(mod_Final2)$r.squared
+# Pseudo R2 para el arbol
+predr<- predict(mod_Final,newdata = train[,-1])
+numerador <- (datos$Unidades-predr)^2
+denominador <- (datos$Unidades - mean(datos$Unidades))^2
+PsR2_3 <- 1 - (sum(numerador)/sum(denominador))
+
+
+metricastrain<- data.frame("Modelo"=c("Modelo1","Modelo3"),
+                      "MSE"=c(mean(mod_Final2$residuals^2),
+                              mean((datos$Unidades - predr)^2)),
+                      "R pseudo2"= c(PsR2_4, 
+                                     PsR2_3 
+                                     ),
+                      "AIC"=c(AIC(mod_Final2),
+                              AIC(mod_Final))
+metricastrain %>% kbl() %>%  kable_styling(font_size = 12)
 
 ```{r}
 pred_train1<- predict(mod_Final,newdata = datos[,-1]) %>% as.data.frame()
@@ -396,6 +427,25 @@ write_xlsx(pred_train1, "Plano_train_1.xlsx")
 write_xlsx(pred_train2, "Plano_train_2.xlsx")
 ```
 
+## Primer archivo plano 
+Las siguientes son las predicciones resultantes para 2012-2017, realizadas por el modelo lineal y con árboles de regresión respectivamente:
+
+```{r}
+
+pred2<- predict(mod_Final,newdata = datos)
+datosini$Fecha <- as.factor(datosini$Fecha)
+pred2<- cbind.data.frame("Fecha"=datosini$Fecha,"Predicción" =pred2 )
+pred2 %>%kbl() %>%  kable_styling(font_size = 12)%>% kableExtra::scroll_box(width = "30%", height = "190px") ## Modelo lineal
+
+
+pred3<- predict(mod_Final2,newdata = datos)
+pred3<- cbind.data.frame("Fecha"=datosini$Fecha,"Predicción" =pred3 )
+pred3 %>%kbl() %>%  kable_styling(font_size = 12)%>% kableExtra::scroll_box(width = "30%", height = "190px")## modelo arbol
+
+
+```
+
+
 
 
 ## Base de datos 2018 (para entregar)
@@ -404,16 +454,18 @@ Las siguientes son las predicciones resultantes para el primer semestre del año
 
 ```{r}
 #BASE 2018
-db2018<-readRDS("Base_datos/db_2018.rds")
+db2018<-readRDS("C:/Users/Pilar/Downloads/db_2018.rds")
 db2018<- filter(db2018, Fecha <= "2018-06-30")
 db2018 <- left_join(x = db2018, y = TRM[,c("Fecha","dolar")], by="Fecha")
 db2018<-left_join(x = db2018, y = tasas , by=c("year","mes"))
-pred3<- predict(mod_Final,newdata = db2018[,-1])
-db2018$Fecha <- as.factor(db2018$Fecha)
-pred3<- cbind.data.frame("Fecha"=db2018$Fecha,"prediccion" =pred3 )
-pred3 %>%kbl() %>%  kable_styling(font_size = 12)%>% kableExtra::scroll_box(width = "30%", height = "190px")
+
 
 ```
+
+
+## Segundo Archivo plano
+
+Las siguientes son las predicciones resultantes para el primer semestre del año 2018, realizadas por el modelo lineal y con árboles de regresión respectivamente:
 
 ```{r eval=F}
 library("writexl")
@@ -421,16 +473,24 @@ write_xlsx(pred3, "Plano1_2018.xlsx")
 ```
 
 
-
-
 ```{r}
+pred4<- predict(mod_Final,newdata = db2018[,-1])
+db2018$Fecha <- as.factor(db2018$Fecha)
+pred4<- cbind.data.frame("Fecha"=db2018$Fecha,"Predicción" =pred4 )
+pred4 %>%kbl() %>%  kable_styling(font_size = 12)%>% kableExtra::scroll_box(width = "30%", height = "190px") ## Modelo lineal
+
+
 predl<- predict(mod_Final2,newdata = db2018[,-1])
-predl<- cbind.data.frame("Fecha"=db2018$Fecha,"prediccion" =predl )
-predl %>%kbl() %>%  kable_styling(font_size = 12)%>% kableExtra::scroll_box(width = "30%", height = "190px")
+predl<- cbind.data.frame("Fecha"=db2018$Fecha,"Predicción" =predl )
+predl %>%kbl() %>%  kable_styling(font_size = 12)%>% kableExtra::scroll_box(width = "30%", height = "190px")## Modelo arbol
+
+
 ```
 ```{r eval=F}
 library("writexl")
 write_xlsx(predl, "Plano2_2018.xlsx")
+
+
 ```
 
 
@@ -445,6 +505,4 @@ Ahora bien, las bases de datos, al igual que el código desarrollado para la tes
 - DANE. Tasas de ocupación y desempleo. Banco de la república | Colombia.  Recuperado 16 de enero de 2022, de https://www.banrep.gov.co/es/estadisticas/tasas-ocupacion-y-desempleo
 
 - Holidays and observances in Colombia. (1995). Time and Date. Recuperado 17 de diciembre de 2021, de https://www.timeanddate.com/holidays/colombia/2012
-
-
 
